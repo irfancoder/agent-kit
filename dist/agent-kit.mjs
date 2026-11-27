@@ -205,7 +205,7 @@ function checkMachine(o) {
     o.owner ??= output("gh", ["api", "user", "-q", ".login"]) ?? fail("gh isn't installed or signed in (gh auth login)");
     if (output("gh", ["repo", "view", `${o.owner}/${o.name}`]) !== null) fail(`github.com/${o.owner}/${o.name} already exists`);
     if (!readdirSync(join2(KIT_DIR, "templates/shared", E2E_CACHE)).some((f) => f.endsWith(".json")))
-      fail("agent-kit's e2e replay cache isn't recorded yet, so the first push would fail (irfancoder/agent-kit#1)");
+      fail("agent-kit's e2e replay cache is missing, so the first push would fail (re-record it: pnpm record-cache)");
   }
   if (!/"loggedIn":\s*true/.test(output("claude", ["auth", "status"]) ?? ""))
     warn("Claude Code isn't signed in; the Builder can't record e2e steps until you run `claude` and sign in");

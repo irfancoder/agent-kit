@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "trace-1",
+  "createdAt": "2026-11-27T13:46:38.832Z",
+  "payload": {
+    "actions": [
+      {
+        "name": "type",
+        "summary": "type \"{{param:/name}}\" into textbox \"Name\"",
+        "target": {
+          "role": "textbox",
+          "name": "Name",
+          "placeholder": "What do you want to add?"
+        },
+        "value": "{{param:/name}}"
+      },
+      {
+        "name": "tap",
+        "summary": "tap button \"Add item\"",
+        "target": {
+          "role": "button",
+          "name": "Add item"
+        }
+      }
+    ],
+    "executor": {
+      "name": "claude-code",
+      "version": "1"
+    },
+    "recordedFor": {
+      "testId": "tests/items.e2e.ts::a%20user%20adds%20an%20item%20and%20sees%20it%20in%20the%20list",
+      "targetId": "web",
+      "instructionDigest": "db737ad726fb0f51e74376ef0bc0ee7d78a8cfd0de69f50863de90326b915322",
+      "paramsDigest": "fe0ec8977efb238a3e5162352b4795a58c1c48aba3db662213434916bb6b17cc",
+      "callIndex": 0,
+      "agent": "default"
+    },
+    "summary": "Added item \"Groceries 1795787186590\" via the Name field and \"Add item\" button. The Items list now shows it, the heading reads \"1 item\", and the Name field is cleared.",
+    "startPath": "/",
+    "endPath": "/",
+    "endAnchors": [
+      {
+        "role": "heading",
+        "name": "1 item"
+      },
+      {
+        "role": "listitem",
+        "name": "{{param:/name}}"
+      },
+      {
+        "role": "list",
+        "name": "Items"
+      }
+    ],
+    "goneAnchors": [
+      {
+        "role": "heading",
+        "name": "No items yet"
+      },
+      {
+        "text": "Add your first item with the form above."
+      }
+    ],
+    "endWaitMs": 15165,
+    "keyedBy": {
+      "cacheSchema": "trace-1",
+      "policyVersion": "conservative/6",
+      "project": "bdcce5c81fcc9f61e3caaa845fb6dd1276a1e60357cdb383fd5c1bc1b16775ef",
+      "platform": "web",
+      "engineName": "web",
+      "engineSpiVersion": 1,
+      "appIdentity": "4064f386d9dc0b99ae37f1077aea6bf22d4ee9e394b472f2284ba64cabd9cc4b",
+      "agentContextDigest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}
