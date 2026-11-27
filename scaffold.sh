@@ -93,6 +93,9 @@ grep -rlI --exclude-dir=.git -e 'kitapp' -e 'Kit App' "$DIR" | grep -v '/package
   TITLE="$TITLE" NAME="$NAME" perl -pi -e 's/Kit App/$ENV{TITLE}/g; s/kitapp/$ENV{NAME}/g' "$file"
 done
 
+# A copied kit (agent-kit installed as a skill) may have lost its executable bits.
+find "$DIR" -name '*.sh' -not -path '*/node_modules/*' -exec chmod +x {} +
+
 cd "$DIR"
 cp .env.example .env
 git init -q -b main

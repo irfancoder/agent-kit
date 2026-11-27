@@ -41,7 +41,7 @@ for spec in "${VARIANTS[@]}"; do
   if [[ "$variant" == node-postgres ]]; then
     echo "==> $spec: kickstart --no-remote"
     printf 'A brief, word for word.\n' > "$WORK/brief.txt"
-    make=("$KIT_DIR/scripts/kickstart.sh" --name "$name" --brief-file "$WORK/brief.txt" --dir "$dir" --no-remote)
+    make=(bash "$KIT_DIR/scripts/kickstart.sh" --name "$name" --brief-file "$WORK/brief.txt" --dir "$dir" --no-remote)
   else
     echo "==> $spec: scaffold"
     make=("$KIT_DIR/scaffold.sh" "$dir" --name "$name" --variant "$variant" ${db:+--db "$db"})

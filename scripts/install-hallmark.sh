@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Installs the Hallmark design skill (https://github.com/nutlope/hallmark, MIT) at a
 # pinned commit, for Claude Code (~/.claude/skills/hallmark) and Codex/other agents
-# (~/.agents/skills/hallmark). Projects' design-language skill drives it.
+# (~/.agents/skills/hallmark), on a machine you work on yourself. Projects'
+# design-language skill drives it. In Rakazo, Hallmark is in the bot's skill list
+# instead; copy it from HALLMARK_PIN below so both match.
 #
 #   scripts/install-hallmark.sh              # install the pinned version
 #   HALLMARK_REF=<sha> scripts/install-hallmark.sh   # try another version

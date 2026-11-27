@@ -26,11 +26,10 @@ locks it so every later screen shares it.
 
 ## Before you start
 
-1. Make sure Hallmark is installed at agent-kit's pinned version: run
-   `scripts/install-hallmark.sh` from the agent-kit checkout (`~/agent-kit` on the team
-   computer). It does nothing when the pinned version is already there. If it fails,
-   append a line to `.agent/PROGRESS.md` saying so and stop. Don't improvise a design
-   without it.
+1. You need the **Hallmark** skill. In Rakazo it's in the bot's skill list; on your own
+   machine, agent-kit's `scripts/install-hallmark.sh` installs it. Below, `<hallmark>`
+   means its skill folder. If you don't have the skill, append a line to
+   `.agent/PROGRESS.md` saying so and stop. Don't improvise a design without it.
 2. Read `.agent/BRIEF.md` and `.agent/GOAL.md`. They answer Hallmark's four questions
    (material, audience, use, tone). Don't ask the owner; Hallmark doesn't ask when
    nobody can answer, and it states what it inferred.
@@ -98,7 +97,7 @@ defaults:
 ## Check it
 
 1. Hallmark's sweep, against the running app:
-   `node ~/.claude/skills/hallmark/scripts/sloplint.mjs apps/web/src --genre <genre> --scope app --render --url http://127.0.0.1:3000/`
+   `node <hallmark>/scripts/sloplint.mjs apps/web/src --genre <genre> --scope app --render --url http://127.0.0.1:3000/`
    Fix every FAIL; fix or waive (with a reason) every REFLEX. Findings in
    `__tests__/` files are test fixtures, not UI: dismiss them. The static tier can't see
    web.css (it's in `node_modules`), so it reports no `:focus-visible`, `:active` or

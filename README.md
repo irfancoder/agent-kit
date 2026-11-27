@@ -10,9 +10,10 @@ copy or link to any MOF code or assets.
 
 ## Contents
 
-- [Before you start](#before-you-start)
+- [Setting it up](#setting-it-up)
 - [Start a project](#start-a-project)
-  - [With a bot: the kickstart skill](#with-a-bot-the-kickstart-skill)
+  - [With a bot: the agent-kit skill](#with-a-bot-the-agent-kit-skill)
+  - [From the command line](#from-the-command-line)
   - [By hand](#by-hand)
 - [Run it](#run-it)
 - [A project's life with an agent team](#a-projects-life-with-an-agent-team)
@@ -23,61 +24,66 @@ copy or link to any MOF code or assets.
 - [Troubleshooting](#troubleshooting)
 - [Maintaining agent-kit](#maintaining-agent-kit)
 
-## Before you start
+## Setting it up
 
-You need these on the machine, once:
+agent-kit is used through one skill, `SKILL.md` at the root of this repo. The skill is
+only instructions. When it runs, it fetches this repo from GitHub (`main`, or
+`AGENT_KIT_REF`) and runs `scripts/kickstart.sh` from it. So a change to the templates
+reaches every bot as soon as it's merged.
+
+**In Rakazo,** add two skills to the bot's skill list:
+
+| Skill | Copy |
+| --- | --- |
+| `agent-kit` | `SKILL.md` from this repo. Recopy it only when `SKILL.md` itself changes |
+| `hallmark` | `skills/hallmark` from [nutlope/hallmark](https://github.com/nutlope/hallmark) at the commit in `HALLMARK_PIN` (`scripts/install-hallmark.sh`), so it matches the version agent-kit was tested with |
+
+The environment the bot runs in also needs these tools:
 
 | Tool | Version | Why |
 | --- | --- | --- |
 | Node.js | 24.8 or newer | Runs TypeScript files directly (type stripping) |
 | pnpm | 12 | Workspaces and the dependency catalog |
 | git, rsync | any recent | The scaffold copies the template and makes the first commit |
-| Claude Code | signed in with `claude` | Records e2e agent steps, on your Claude Max plan |
+| gh | signed in, with read access to `irfancoder/agent-kit` | Fetches agent-kit, creates the project's private repo and its first issue |
 | Docker | running | Local Postgres (not needed for `--db d1`) |
+| Claude Code | signed in with `claude` | Records e2e agent steps, on your Claude Max plan |
 
-Then get agent-kit itself. It's a private repo:
+**On your own machine,** clone the repo and install Hallmark at the pinned version:
 
 ```bash
 gh repo clone irfancoder/agent-kit ~/agent-kit
+~/agent-kit/scripts/install-hallmark.sh
 ```
 
-Then install agent-kit's skills for your agents, once per machine:
-
-```bash
-~/agent-kit/scripts/install-skills.sh
-```
-
-It links the **kickstart** skill (which starts projects; see below) into
-`~/.claude/skills` and `~/.agents/skills`, and installs the Hallmark design skill at the
-version agent-kit pins. Rerun it any time; it only changes what's out of date. Sign
-Claude Code in too (run `claude`): agents record e2e steps on your Claude Max plan.
+To give a local Claude Code the skill too, link the folder:
+`ln -s ~/agent-kit ~/.claude/skills/agent-kit`. The skill then sees the full checkout
+beside its `SKILL.md` and uses it instead of fetching the repo.
 
 ## Start a project
 
-### With a bot: the kickstart skill
+### With a bot: the agent-kit skill
 
-Give the Lead bot (or any Claude Code session on the machine) your brief and ask it to
-kick off the project:
+Ask the bot to start a project ("kick off a new project", or invoke the `agent-kit`
+skill). The bot:
 
-> Kickstart a project from this brief: A simple stock tracker for my sister's kedai
-> runcit. She adds items as they come in and sees what's left at a glance, on her phone,
-> in Bahasa Melayu.
-
-The bot:
-1. picks a name, a title and a variant from the brief, and only asks you if the brief
-   contradicts itself;
-2. runs `scripts/kickstart.sh`, which:
+1. **asks for your brief**, in your own words, and keeps it word for word;
+2. **proposes** a name, a title and a variant (with a one-line reason), where the
+   project goes (default `~/projects/<name>`) and the GitHub owner, then **waits for you
+   to confirm or change them**;
+3. **runs `scripts/kickstart.sh`**, which:
    - checks the machine;
-   - scaffolds into `~/projects/<name>`;
-   - saves your brief word for word in `.agent/BRIEF.md`;
+   - scaffolds the project, with your brief in `.agent/BRIEF.md` in its first commit;
    - creates the private repo `github.com/<you>/<name>` and pushes;
    - opens a `ready` issue, **Plan the project from the brief**, for the Planner;
-3. reports back the repo and issue links, its choices and any warnings.
+4. **reports back** the repo and issue links, its choices and any warnings.
 
 From there the team takes over (see
 [A project's life with an agent team](#a-projects-life-with-an-agent-team)).
 
-`kickstart.sh` works without a bot too:
+### From the command line
+
+`kickstart.sh` is what the skill runs, and you can run it yourself:
 
 ```bash
 ~/agent-kit/scripts/kickstart.sh --name kedai-stock --title "Kedai Stock" --brief-file brief.md
@@ -249,9 +255,10 @@ How it fits together:
 - Light and dark follow the OS. The Dark mode toggle in the header pins one, and the
   choice is saved.
 
-Hallmark is installed per machine, not shipped in each project. To move to a newer
-version, change `HALLMARK_PIN` in `scripts/install-hallmark.sh` on purpose, as you would
-bump a dependency, and rerun it.
+Hallmark isn't shipped in each project: it's a skill of the environment (Rakazo's skill
+list, or `~/.claude/skills` on your own machine). To move to a newer version, change
+`HALLMARK_PIN` in `scripts/install-hallmark.sh` on purpose, as you would bump a
+dependency. Then rerun the script locally and copy that commit into Rakazo.
 
 ## Variants
 
@@ -310,8 +317,9 @@ The kit itself:
 | `templates/node-postgres/base/` | The Fastify api, docker-compose, e2e serve script |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
 | `scripts/record-e2e-cache.sh` | Records the e2e replay cache that ships in the template |
-| `scripts/kickstart.sh`, `skills/kickstart/` | Starts a project from a brief, and the skill that drives it |
-| `scripts/install-skills.sh` | Links the kickstart skill and installs Hallmark (`scripts/install-hallmark.sh`, pinned) |
+| `SKILL.md` | The agent-kit skill: asks for the brief and choices, fetches this repo, runs `kickstart.sh` |
+| `scripts/kickstart.sh` | Starts a project from a brief: checks, scaffold, private repo, Planner issue |
+| `scripts/install-hallmark.sh` | Installs Hallmark at the pinned commit on a local machine (`HALLMARK_PIN`) |
 | `FINDINGS.md` | Research behind the tool choices |
 
 To change the template:

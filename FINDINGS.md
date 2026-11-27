@@ -97,8 +97,19 @@ Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at 
   linter are local.
 - **Install:** `npx skills add nutlope/hallmark` installs whatever is latest, so
   agent-kit's `scripts/install-hallmark.sh` fetches the pinned commit and copies
-  `skills/hallmark` into `~/.claude/skills` and `~/.agents/skills`. Hallmark's optional
-  edit-time hook edits Claude Code settings, so it isn't installed.
+  `skills/hallmark` into `~/.claude/skills` and `~/.agents/skills` on a local machine.
+  In Rakazo, Hallmark is copied into the bot's skill list at the same commit. Hallmark's
+  optional edit-time hook edits Claude Code settings, so it isn't installed.
+
+## Running from Rakazo
+
+Rakazo's bots can only invoke skills from Rakazo's skill list, so agent-kit is used as
+one skill. That skill, `SKILL.md` at the repo root, is only instructions. When it runs,
+it clones this repo from GitHub (`main`, or `AGENT_KIT_REF`) into a temp folder and runs
+`scripts/kickstart.sh` from it. Rakazo holds one small file, and template changes reach
+it once merged. The same `gh` login that creates the project's repo reads this one. The
+scripts are run with `bash`, and `scaffold.sh` marks the project's `.sh` files
+executable, so a copy that lost its executable bits still works.
 
 ### Trial run (2026-11-27)
 
