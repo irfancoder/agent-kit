@@ -52,7 +52,11 @@ rules and base styles are in a shared `app.css`, so `tokens.css` holds only desi
 
 - **Base UI** (`@base-ui/react` 1.9.0, MIT) is the default: stable, from the Radix and
   Material UI teams. It renders no styles; the wrappers carry Tailwind classes, with the
-  shared control shape and focus ring in `styles.ts`. Its toasts use a global manager
+  shared control shape and focus ring in `styles.ts`. It wraps every Base UI component;
+  the shared app code uses only the five above, which ui-sdk also has. Classes merge with
+  shadcn's [`cn`](https://github.com/shadcn-ui/cn) (`cn` 0.5.2, MIT, no dependencies; it
+  replaces clsx + tailwind-merge), set up in `styles.ts` with the token radius and shadow
+  names it can't tell apart on its own. Its toasts use a global manager
   (`Toast.createToastManager()`), so `toast.error()` works from anywhere. It doesn't set
   `data-slot`.
 - **ui-sdk** (`@ui-sdk/react` + `@ui-sdk/core` 0.1.0-beta.17, Apache-2.0) is the option:

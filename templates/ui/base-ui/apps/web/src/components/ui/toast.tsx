@@ -1,9 +1,13 @@
 import { Toast } from '@base-ui/react/toast';
 import type { ReactNode } from 'react';
 import { useI18n } from '@/i18n/index.tsx';
-import { cx, focusRing } from './styles.ts';
+import { XIcon } from './icons.tsx';
+import { cn, focusRing, surface } from './styles.ts';
 
 const manager = Toast.createToastManager();
+
+const root = cn(surface, 'flex items-start gap-3 p-4 text-sm data-[type=error]:border-error');
+const close = cn('cursor-pointer text-muted hover:text-ink', focusRing);
 
 /** Call from anywhere: toast.error('…'), toast.success('…'). */
 export const toast = {
@@ -18,22 +22,12 @@ function Toasts() {
     <Toast.Portal>
       <Toast.Viewport className="fixed right-4 bottom-4 z-(--z-toast) flex w-80 flex-col gap-2">
         {toasts.map((item) => (
-          <Toast.Root
-            key={item.id}
-            toast={item}
-            className={cx(
-              'flex items-start gap-3 rounded-card border border-rule bg-paper-2 p-4 text-sm text-ink shadow-pop',
-              'data-[type=error]:border-error',
-            )}
-          >
+          <Toast.Root key={item.id} toast={item} className={root}>
             <Toast.Content className="flex-1">
               <Toast.Title className="font-medium" />
             </Toast.Content>
-            <Toast.Close
-              aria-label={t('toast.close')}
-              className={cx('cursor-pointer text-muted hover:text-ink', focusRing)}
-            >
-              ×
+            <Toast.Close aria-label={t('toast.close')} className={close}>
+              <XIcon />
             </Toast.Close>
           </Toast.Root>
         ))}
