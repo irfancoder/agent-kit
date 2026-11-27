@@ -5,7 +5,7 @@
 # trap stops the api with it.
 set -euo pipefail
 export WRANGLER_SEND_METRICS=false
-WEB_PORT="${1:?usage: serve.sh <web-port>}"
+E2E_WEB_PORT="${1:?usage: serve.sh <web-port>}"
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$ROOT"
 if [[ -f .env ]]; then set -a; source .env; set +a; fi
@@ -45,7 +45,7 @@ for _ in $(seq 1 120); do
 done
 
 cd apps/web
-API_URL="http://127.0.0.1:$API_PORT" WEB_PORT="$WEB_PORT" node_modules/.bin/rsbuild dev &
+API_URL="http://127.0.0.1:$API_PORT" WEB_PORT="$E2E_WEB_PORT" node_modules/.bin/rsbuild dev &
 WEB_PID=$!
 PIDS+=("$WEB_PID")
 wait "$WEB_PID"

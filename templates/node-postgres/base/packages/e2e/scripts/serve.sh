@@ -4,7 +4,7 @@
 # dev server in front of it. The runner stops this script when the run ends; the trap
 # stops the api with it. Postgres is left running for the next run.
 set -euo pipefail
-WEB_PORT="${1:?usage: serve.sh <web-port>}"
+E2E_WEB_PORT="${1:?usage: serve.sh <web-port>}"
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$ROOT"
 
@@ -39,7 +39,7 @@ for _ in $(seq 1 120); do
 done
 
 cd apps/web
-API_URL="http://127.0.0.1:$API_PORT" WEB_PORT="$WEB_PORT" node_modules/.bin/rsbuild dev &
+API_URL="http://127.0.0.1:$API_PORT" WEB_PORT="$E2E_WEB_PORT" node_modules/.bin/rsbuild dev &
 WEB_PID=$!
 PIDS+=("$WEB_PID")
 wait "$WEB_PID"

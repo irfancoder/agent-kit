@@ -5,10 +5,12 @@ import { stylexPlugin } from './stylex.config.ts';
 
 export default defineConfig(({ command }) => {
   const dev = command === 'dev';
-  // Read API_URL from the repo-root .env. processEnv: {} keeps the file's other
-  // values (the api's settings) out of this process and out of the bundle.
+  // Read API_URL and WEB_PORT from the repo-root .env (Turborepo doesn't pass shell
+  // env through to tasks). processEnv: {} keeps the file's other values (the api's
+  // settings) out of this process and out of the bundle.
   const { parsed } = loadEnv({ cwd: '../..', processEnv: {} });
   const apiUrl = process.env.API_URL ?? parsed.API_URL ?? 'http://127.0.0.1:3001';
+  const webPort = Number(process.env.WEB_PORT ?? parsed.WEB_PORT ?? 3000);
 
   return {
     plugins: [pluginReact()],
@@ -17,7 +19,7 @@ export default defineConfig(({ command }) => {
     html: { title: 'Kit App' },
     server: {
       host: '127.0.0.1',
-      port: Number(process.env.WEB_PORT ?? 3000),
+      port: webPort,
       // The web app calls /api/*; the dev and preview servers forward it to the api.
       proxy: { '/api': { target: apiUrl, pathRewrite: { '^/api': '' } } },
     },

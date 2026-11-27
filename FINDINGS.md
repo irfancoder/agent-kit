@@ -76,6 +76,31 @@ Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at 
   `skills/hallmark` into `~/.claude/skills` and `~/.agents/skills`. Hallmark's optional
   edit-time hook edits Claude Code settings, so it isn't installed.
 
+### Trial run (2026-11-27)
+
+I gave a scaffolded "Stock Ledger" project a design language with the skill. Hallmark
+dealt Ink, Vellum and Coral and Ink was picked. The run went through Hallmark's
+scaffold, a merge into `tokens.css` with dark values derived from its recipe, a ruled
+ledger list as the signature, and `sloplint` (0 FAIL, the zero-chroma gate waived as
+Ink asks). DESIGN.md was locked and the commit passed pre-commit. What it changed in
+the template:
+
+- **`data-slot` clash:** Hallmark's `base.css` styles every `[data-slot]` as a photo
+  slot, but shadcn-style components put `data-slot` on every part. The skill now
+  deletes those rules.
+- **Primary colour:** Hallmark's `--color-accent` is a signal colour, but Ink's primary
+  button is ink-filled. Components now paint primary actions with a
+  `--color-primary` role, which defaults to the accent.
+- **Waivers:** need the exact `/* Hallmark · waive <gate> · <evidence> · <reason> */`
+  form, with a reason that uses words from the page.
+- **`WEB_PORT`:** `init.sh` exported it but Turborepo drops shell env, so the web
+  server ignored it. Rsbuild now reads it from `.env`.
+- **Icons:** sloplint gate 33 can't see `aria-hidden` spread from an object, so the
+  icons set it inline.
+- **Not run:** Hallmark's render tier (screenshots, contrast in the browser) needs
+  `npm i -g puppeteer-core` and Chrome. I checked both themes in a browser by hand
+  instead.
+
 ## shadcn without Tailwind
 
 Docs: [Registry](https://ui.shadcn.com/docs/registry), [Namespaces](https://ui.shadcn.com/docs/registry/namespace), [Authentication](https://ui.shadcn.com/docs/registry/authentication), [components.json](https://ui.shadcn.com/docs/components-json).
