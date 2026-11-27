@@ -1,4 +1,4 @@
 {
   "extends": "@kitapp/tsconfig/node.json",
-  "include": ["src", "rstest.config.ts"]
+  "include": ["src", "scripts", "rstest.config.ts"]
 }

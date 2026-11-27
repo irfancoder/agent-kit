@@ -1,7 +1,6 @@
 import {
   appendFileSync,
   chmodSync,
-  copyFileSync,
   cpSync,
   mkdirSync,
   readdirSync,
@@ -11,7 +10,7 @@ import {
 } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { layers } from './checks.ts';
-import { describe, type Options } from './options.ts';
+import { dbEnvVar, describe, type Options } from './options.ts';
 import { E2E_CACHE, KIT_DIR, KIT_VERSION, run, step } from './util.ts';
 
 const SKIP = new Set(['node_modules', '.turbo', 'dist']);
@@ -94,12 +93,21 @@ function recordBrief(o: Options): void {
   );
 }
 
+/** .env from .env.example, pointed at the caller's Postgres when DATABASE_URL is set. */
+function writeEnv(o: Options): void {
+  const url = process.env.DATABASE_URL;
+  const key = dbEnvVar(o);
+  let env = readFileSync(join(o.dir, '.env.example'), 'utf8');
+  if (url && key) env = env.replace(new RegExp(`^${key}=.*$`, 'm'), () => `${key}=${url}`);
+  writeFileSync(join(o.dir, '.env'), env);
+}
+
 /** Creates the project and makes its first commit, through its own pre-commit hook. */
 export function scaffold(o: Options): void {
   step(`Scaffolding ${o.name} (${describe(o)}) into ${o.dir}`);
   copyTemplates(o);
   addComponentLibrary(o);
-  copyFileSync(join(o.dir, '.env.example'), join(o.dir, '.env'));
+  writeEnv(o);
   recordBrief(o);
   const here = { cwd: o.dir };
   run('git', ['init', '-q', '-b', 'main'], here);

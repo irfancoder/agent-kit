@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Started by the e2e runner (app.command in e2e.config.ts) with the web port it picked.
-# Starts Postgres, resets the e2e database, starts the api on a free port, then the web
-# dev server in front of it. The runner stops this script when the run ends; the trap
-# stops the api with it. Postgres is left running for the next run.
+# Resets the e2e database on the Postgres in DATABASE_URL, starts the api on a free port,
+# then the web dev server in front of it. The runner stops this script when the run ends;
+# the trap stops the api with it.
 set -euo pipefail
 E2E_WEB_PORT="${1:?usage: serve.sh <web-port>}"
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -10,18 +10,12 @@ cd "$ROOT"
 
 # Settings from .env (copied from .env.example on scaffold), if present.
 if [[ -f .env ]]; then set -a; source .env; set +a; fi
-PG_PORT="${POSTGRES_PORT:-5432}"
-E2E_DB="kitapp_e2e"
-
-docker compose up -d --wait postgres >&2
-docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U kitapp -d kitapp -q \
-  -c "DROP DATABASE IF EXISTS \"$E2E_DB\" WITH (FORCE)" \
-  -c "CREATE DATABASE \"$E2E_DB\"" >&2
+: "${DATABASE_URL:?serve.sh: set DATABASE_URL in .env to a Postgres you provide}"
+DATABASE_URL="$(node apps/api/scripts/e2e-db.ts "$DATABASE_URL")"
 
 free_port() { node -e "const s=require('net').createServer();s.listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})"; }
 API_PORT="$(free_port)"
-export HOST=127.0.0.1 PORT="$API_PORT" LOG_LEVEL=warn
-export DATABASE_URL="postgres://kitapp:kitapp@127.0.0.1:$PG_PORT/$E2E_DB"
+export HOST=127.0.0.1 PORT="$API_PORT" LOG_LEVEL=warn DATABASE_URL
 
 PIDS=()
 stop() { kill "${PIDS[@]}" 2>/dev/null || true; }

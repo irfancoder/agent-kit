@@ -12,7 +12,7 @@
       // Replace with the id from `wrangler hyperdrive create` before deploying.
       "id": "00000000000000000000000000000000",
       // Local dev only. CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE overrides it.
-      "localConnectionString": "postgres://kitapp:kitapp@127.0.0.1:5432/kitapp",
+      "localConnectionString": "postgres://postgres:postgres@127.0.0.1:5432/kitapp",
     },
   ],
 }

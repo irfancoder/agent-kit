@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# One command from a fresh clone: install dependencies, start the local database,
-# start the api and web dev servers in the background, and wait for
-# /healthz. Idempotent: run it again and it reuses whatever is already running.
+# One command from a fresh clone: install dependencies, start the api and web dev
+# servers in the background against the database in .env, and wait for /healthz.
+# Idempotent: run it again and it reuses whatever is already running.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -10,8 +10,6 @@ set -a; source .env; set +a
 API="http://${HOST:-127.0.0.1}:${PORT:-3001}"
 
 pnpm install --frozen-lockfile
-# Postgres variants run it in Docker; D1 needs nothing here.
-if [[ -f docker-compose.yml ]]; then docker compose up -d --wait postgres; fi
 
 mkdir -p .agent/logs
 if curl -sf "$API/healthz" >/dev/null; then
