@@ -1,0 +1,22 @@
+{
+  "name": "@kitapp/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "E2E_TELEMETRY_DISABLED=1 e2e run",
+    "e2e:record": "E2E_TELEMETRY_DISABLED=1 e2e run --retries 0",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@agentclientprotocol/claude-agent-acp": "catalog:",
+    "@e2e-dev/acp": "catalog:",
+    "@e2e-dev/web": "catalog:",
+    "@kitapp/contracts": "workspace:*",
+    "@kitapp/tsconfig": "workspace:*",
+    "@types/node": "catalog:",
+    "e2e": "catalog:",
+    "typescript": "catalog:",
+    "valibot": "catalog:"
+  }
+}

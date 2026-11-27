@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.turbo/
+.env
+.env.*
+!.env.example
+*.log
+.wrangler/
+.dev.vars
+coverage/
+# e2e: the replay cache in .e2e/cache is committed, everything else is not
+.e2e/*
+!.e2e/cache/
+packages/e2e/.e2e/*
+!packages/e2e/.e2e/cache/
+.DS_Store
+.agent/logs/

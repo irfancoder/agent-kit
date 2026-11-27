@@ -1,0 +1,30 @@
+{
+  "name": "kitapp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck && tsc -p tsconfig.json",
+    "lint": "oxlint",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "test": "turbo run test",
+    "e2e": "pnpm --filter @kitapp/e2e e2e",
+    "prepare": "lefthook install",
+    "check:agent": "node scripts/check-agent-state.ts"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "lefthook": "catalog:",
+    "oxfmt": "catalog:",
+    "oxlint": "catalog:",
+    "turbo": "catalog:",
+    "typescript": "catalog:",
+    "valibot": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.8"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

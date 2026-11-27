@@ -1,0 +1,20 @@
+# Git hooks. Never skip them (no --no-verify) and never edit them to get past a failure.
+# Run one by hand with: pnpm exec lefthook run pre-commit --all-files
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      run: pnpm exec oxfmt --check
+    lint:
+      run: pnpm exec oxlint
+    agent-state:
+      run: pnpm check:agent
+    typecheck:
+      run: pnpm typecheck
+    test:
+      run: pnpm turbo run test
+
+pre-push:
+  commands:
+    e2e:
+      run: pnpm e2e --strict-cache

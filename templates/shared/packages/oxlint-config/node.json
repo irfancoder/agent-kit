@@ -1,0 +1,6 @@
+{
+  "$schema": "../../node_modules/oxlint/configuration_schema.json",
+  "extends": ["./base.json"],
+  "plugins": ["typescript", "unicorn", "oxc", "import", "node"],
+  "env": { "node": true, "es2024": true }
+}

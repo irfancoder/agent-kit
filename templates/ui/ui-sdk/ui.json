@@ -1,0 +1,13 @@
+{
+  "catalog": {
+    "@ui-sdk/core": "0.1.0-beta.17",
+    "@ui-sdk/react": "0.1.0-beta.17"
+  },
+  "renovate": [
+    {
+      "description": "ui-sdk packages move together",
+      "matchPackageNames": ["@ui-sdk/**"],
+      "groupName": "ui-sdk"
+    }
+  ]
+}

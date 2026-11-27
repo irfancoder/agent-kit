@@ -1,0 +1,3 @@
+node_modules/
+.DS_Store
+# dist/ is committed on purpose: `pnpm dlx github:…` runs it without a build step.

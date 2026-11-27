@@ -1,0 +1,97 @@
+/*
+ * Design tokens: the one source of truth for colour, type, space, shape and motion.
+ *
+ * Names and layout follow Hallmark's Tailwind v4 format (https://github.com/nutlope/hallmark,
+ * references/export-formats.md), so a Hallmark run (the design-language skill) rewrites
+ * the values in this file and everything follows:
+ * - @theme static holds colours, fonts, text sizes, radii, shadows and eases. Each is a
+ *   Tailwind utility (bg-paper, text-ink, font-display, rounded-card) and a CSS variable.
+ * - :root holds the rest.
+ *
+ * Neutral starter values: no design language has been chosen yet. Each colour is
+ * light-dark(<light>, <dark>); app.css decides which one shows.
+ * There is no dark: variant: write colours as light-dark() tokens, not per-scheme classes.
+ */
+@theme static {
+  /* No Tailwind palette: every colour comes from a role below. */
+  --color-*: initial;
+  --color-paper: light-dark(#ffffff, #0b0b0f);
+  --color-paper-2: light-dark(#fafafa, #141418);
+  --color-paper-3: light-dark(#f4f4f5, #1f1f25);
+  --color-ink: light-dark(#18181b, #f4f4f5);
+  --color-ink-2: light-dark(#3f3f46, #d4d4d8);
+  --color-muted: light-dark(#5f5f6b, #a1a1aa);
+  --color-rule: light-dark(#e4e4e7, #2b2b33);
+  --color-rule-2: light-dark(#d4d4d8, #3a3a44);
+  --color-accent: light-dark(#18181b, #f4f4f5);
+  --color-accent-ink: light-dark(#ffffff, #0b0b0f);
+  --color-focus: light-dark(#2563eb, #60a5fa);
+  --color-error: light-dark(#dc2626, #f87171);
+  --color-error-ink: light-dark(#ffffff, #0b0b0f);
+  --color-success: light-dark(#15803d, #4ade80);
+  /* The primary action's fill. Most themes use the accent; a theme whose primary
+     button is ink-filled (Hallmark's Ink, for one) sets var(--color-ink). */
+  --color-primary: var(--color-accent);
+  --color-primary-ink: var(--color-accent-ink);
+  /* Control borders need 3:1 against the paper, so they mix from the ink. */
+  --color-control-edge: color-mix(in oklch, var(--color-ink) 50%, var(--color-paper));
+  --color-overlay: color-mix(in oklch, var(--color-ink) 40%, transparent);
+
+  --font-display: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Hallmark's app-screen scale. */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.44rem;
+  --text-2xl: 1.728rem;
+  --text-3xl: 2.074rem;
+
+  --radius-inner: 4px;
+  --radius-control: 6px;
+  --radius-card: 10px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px var(--shadow-color);
+  --shadow-pop: 0 4px 12px var(--shadow-color), 0 1px 3px var(--shadow-color);
+  --shadow-modal: 0 12px 32px var(--shadow-color);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+:root {
+  --shadow-color: light-dark(rgb(24 24 27 / 0.08), rgb(0 0 0 / 0.5));
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+
+  /* Every step but 2px is a multiple of Tailwind's 4px unit: --space-md is p-4, --space-xl p-10. */
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 40px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --space-4xl: 144px;
+  --rule-hair: 1px;
+
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --z-dropdown: 100;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}

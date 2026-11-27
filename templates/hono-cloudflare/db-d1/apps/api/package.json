@@ -1,0 +1,27 @@
+{
+  "name": "@kitapp/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/check-env.ts && node scripts/db-setup.ts && wrangler dev --env-file ../../.env --ip 127.0.0.1 --port ${PORT:-3001}",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "rstest run"
+  },
+  "dependencies": {
+    "@kitapp/contracts": "workspace:*",
+    "@scalar/hono-api-reference": "catalog:",
+    "hono": "catalog:",
+    "kysely": "catalog:",
+    "kysely-d1": "catalog:",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:",
+    "@kitapp/tsconfig": "workspace:*",
+    "@rstest/core": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
+  }
+}
