@@ -21,6 +21,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
+  // Ctrl+C or Ctrl+D at a question.
+  if (error instanceof Error && error.name === 'AbortError') error = new KitError('cancelled');
   console.error(`agent-kit: ${error instanceof KitError ? error.message : String(error)}`);
   process.exit(1);
 });

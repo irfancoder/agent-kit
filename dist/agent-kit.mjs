@@ -295,6 +295,7 @@ PROJECT_REPO=${repo}
 PROJECT_ISSUE=${issue}`);
 }
 main().catch((error) => {
+  if (error instanceof Error && error.name === "AbortError") error = new KitError("cancelled");
   console.error(`agent-kit: ${error instanceof KitError ? error.message : String(error)}`);
   process.exit(1);
 });
