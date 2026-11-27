@@ -15,3 +15,6 @@ packages/e2e/.e2e/*
 !packages/e2e/.e2e/cache/
 .DS_Store
 .agent/logs/
+# SQLite databases (node-sqlite)
+*.sqlite
+*.sqlite-*

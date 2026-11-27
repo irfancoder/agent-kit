@@ -33,7 +33,7 @@ catalog:
   # component library: filled in by agent-kit from templates/ui/<library>/ui.json
   tailwindcss: 4.3.5
   '@tailwindcss/postcss': 4.3.5
-  # api (node-postgres)
+  # api (node-postgres, node-sqlite; pg is Postgres only)
   fastify: 5.12.8
   pino: 10.4.0
   '@scalar/fastify-api-reference': 1.83.0

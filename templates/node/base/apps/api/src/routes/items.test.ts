@@ -10,7 +10,7 @@ import { buildApp } from '../app.ts';
 import type { Database } from '../db/schema.ts';
 
 // A Kysely instance with no database behind it: every query returns no rows.
-// Enough to test routing, validation and the error shape without Postgres.
+// Enough to test routing, validation and the error shape without a database.
 const db = new Kysely<Database>({
   dialect: {
     createAdapter: () => new PostgresAdapter(),

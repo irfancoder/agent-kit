@@ -7,7 +7,7 @@ import { parseEnvOrExit } from './validate.ts';
 const env = parseEnvOrExit(EnvSchema, process.env);
 
 const logger = pino({ level: env.LOG_LEVEL });
-const db = createDb(env.DATABASE_URL);
+const db = createDb(env);
 await migrate(db);
 const app = await buildApp({ db, logger });
 

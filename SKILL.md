@@ -32,6 +32,7 @@ From the brief, propose:
   | The brief says | Variant |
   | --- | --- |
   | Nothing about hosting (the usual case) | `--variant node-postgres` (Fastify and Postgres) |
+  | A small or single-user app, SQLite, or "no separate database", with no hosting named | `--variant node-sqlite` (Fastify and a SQLite file) |
   | Cloudflare, Workers, edge | `--variant hono-cloudflare` (Postgres through Hyperdrive) |
   | Cloudflare plus D1, SQLite, or "no separate database" | `--variant hono-cloudflare --db d1` |
 
