@@ -14,7 +14,7 @@ answers were read.
 | Cloudflare database | Both, chosen at scaffold time: `--db hyperdrive` (default: Postgres through Hyperdrive, same Kysely migrations as the Node variant) or `--db d1` (D1/SQLite with kysely-d1 and SQL migrations). |
 | SECURITY_CHECKLIST.md | A starter version is in `templates/shared/.agent/SECURITY_CHECKLIST.md`. Irfan supplies the final text. |
 | e2e model provider | Claude Code over ACP (`@e2e-dev/acp`), signed in with the owner's `claude` login, so recording uses the Claude Max plan. No API key: `ANTHROPIC_API_KEY` is blanked for the agent so it can't take over from the login. |
-| Hosting | Private repo `irfancoder/agent-kit`; only Irfan can push. |
+| Hosting | Public repo `irfancoder/agent-kit` (it started private); only Irfan can push. Projects it creates are private repos. |
 
 ## Pinned versions
 
@@ -101,15 +101,27 @@ Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at 
   In Rakazo, Hallmark is copied into the bot's skill list at the same commit. Hallmark's
   optional edit-time hook edits Claude Code settings, so it isn't installed.
 
-## Running from Rakazo
+## Running from Rakazo, and the CLI
 
 Rakazo's bots can only invoke skills from Rakazo's skill list, so agent-kit is used as
-one skill. That skill, `SKILL.md` at the repo root, is only instructions. When it runs,
-it clones this repo from GitHub (`main`, or `AGENT_KIT_REF`) into a temp folder and runs
-`scripts/kickstart.sh` from it. Rakazo holds one small file, and template changes reach
-it once merged. The same `gh` login that creates the project's repo reads this one. The
-scripts are run with `bash`, and `scaffold.sh` marks the project's `.sh` files
-executable, so a copy that lost its executable bits still works.
+one skill, `SKILL.md` at the repo root. It holds only instructions.
+
+The kit itself is a CLI run with `pnpm dlx github:irfancoder/agent-kit#semver:^0`. It's
+TypeScript, bundled
+by esbuild into a committed `dist/agent-kit.mjs`, so `pnpm dlx` needs no build step. It
+has no runtime dependencies: its questions use `node:readline`. Releases are git tags.
+
+- **Public repo:** pnpm resolves `github:` packages with `git ls-remote` over HTTPS and
+  never asks for credentials. While the repo was private that failed with
+  `ERR_PNPM_GIT_RESOLVE_FAILED … could not read Username` unless git used gh's login
+  (`gh auth setup-git`). Public, it needs no login.
+- **Dotfiles:** packing drops `.gitignore` files, so the template stores it as
+  `_gitignore` and the CLI renames it. Every other template dotfile (`.agent/`, `.claude/`,
+  `.env.example`, `.e2e/cache/`) packs fine; `selftest.sh` compares nothing here, but a
+  `pnpm pack` listing matched every tracked template file.
+- **Executable bits:** the CLI marks the project's `.sh` files executable after copying.
+- **No temp files:** the skill pipes the brief to `--brief-file -`, and pnpm manages its
+  own download cache.
 
 ### Trial run (2026-11-27)
 

@@ -11,6 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 var KIT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..");
 var KIT_VERSION = JSON.parse(readFileSync(join(KIT_DIR, "package.json"), "utf8")).version;
+var E2E_CACHE = join("packages", "e2e", ".e2e", "cache");
 var KitError = class extends Error {
 };
 function fail(message) {
@@ -27,8 +28,8 @@ function run(cmd, args, options = {}) {
   if (result.error) fail(`${cmd} couldn't start: ${result.error.message}`);
   if (result.status !== 0) fail(`${cmd} ${args.join(" ")} failed (exit ${result.status})`);
 }
-function output(cmd, args, options = {}) {
-  const result = spawnSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...options });
+function output(cmd, args) {
+  const result = spawnSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
   return result.status === 0 ? String(result.stdout).trim() : null;
 }
 
@@ -40,48 +41,42 @@ function layers(o) {
     ...o.db ? [join2(KIT_DIR, "templates", o.variant, `db-${o.db}`)] : []
   ];
 }
+function majorMinor(version) {
+  const [, major = "0", minor = "0"] = /(\d+)(?:\.(\d+))?/.exec(version) ?? [];
+  return [Number(major), Number(minor)];
+}
 function checkMachine(o) {
   if (existsSync(o.dir)) fail(`${o.dir} already exists`);
-  for (const cmd of ["git", "pnpm", "node"]) {
-    if (output(cmd, ["--version"]) === null) fail(`${cmd} is not installed`);
-  }
+  if (output("git", ["--version"]) === null) fail("git is not installed");
   const pkg = JSON.parse(readFileSync2(join2(KIT_DIR, "templates/shared/package.json"), "utf8"));
-  const [needMajor, needMinor = 0] = String(pkg.engines.node).replace(/[^0-9.]/g, "").split(".").map(Number);
-  const [major, minor] = process.versions.node.split(".").map(Number);
+  const [needMajor, needMinor] = majorMinor(pkg.engines.node);
+  const [major, minor] = majorMinor(process.versions.node);
   if (major < needMajor || major === needMajor && minor < needMinor)
     fail(`Node.js ${pkg.engines.node} is needed (found ${process.version})`);
-  const pnpmMajor = String(pkg.packageManager).split("@")[1].split(".")[0];
-  const pnpm = output("pnpm", ["--version"]) ?? "";
-  if (pnpm.split(".")[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
+  const pnpm = output("pnpm", ["--version"]) ?? fail("pnpm is not installed");
+  const [pnpmMajor] = majorMinor(pkg.packageManager);
+  if (majorMinor(pnpm)[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
   if (layers(o).some((layer) => existsSync(join2(layer, "docker-compose.yml"))) && output("docker", ["info"]) === null)
     fail("Docker isn't running (the project's database needs it)");
-  let owner;
   if (o.github) {
-    owner = o.owner ?? output("gh", ["api", "user", "-q", ".login"]) ?? fail("gh isn't installed or signed in (gh auth login)");
-    if (output("gh", ["repo", "view", `${owner}/${o.name}`]) !== null) fail(`github.com/${owner}/${o.name} already exists`);
-    const cache = join2(KIT_DIR, "templates/shared/packages/e2e/.e2e/cache");
-    if (!readdirSync(cache).some((f) => f.endsWith(".json")))
+    o.owner ??= output("gh", ["api", "user", "-q", ".login"]) ?? fail("gh isn't installed or signed in (gh auth login)");
+    if (output("gh", ["repo", "view", `${o.owner}/${o.name}`]) !== null) fail(`github.com/${o.owner}/${o.name} already exists`);
+    if (!readdirSync(join2(KIT_DIR, "templates/shared", E2E_CACHE)).some((f) => f.endsWith(".json")))
       fail("agent-kit's e2e replay cache isn't recorded yet, so the first push would fail (irfancoder/agent-kit#1)");
   }
   if (!/"loggedIn":\s*true/.test(output("claude", ["auth", "status"]) ?? ""))
     warn("Claude Code isn't signed in; the Builder can't record e2e steps until you run `claude` and sign in");
-  return owner;
 }
 
 // src/github.ts
-var PLAN_ISSUE = `Read \`AGENTS.md\`, then \`.agent/BRIEF.md\`.
+var PLAN_ISSUE = `Read \`AGENTS.md\`, then plan the project from \`.agent/BRIEF.md\`: \`GOAL.md\`, \`SPEC.md\` and \`feature_list.json\`.
 
-- Write \`.agent/GOAL.md\` (frozen once merged), \`.agent/SPEC.md\` and \`.agent/feature_list.json\` (\`pnpm check:agent\` validates it).
-- Open the design-language ticket first, labelled \`ready\`: run the \`design-language\` skill before any UI feature.
-- Open one issue per feature in \`feature_list.json\`, labelled \`ready\` once nothing it depends on is still open.
-- A question only the owner can answer: comment on this issue with your recommendation and add \`needs-decision\`.
-
-Work on a branch and open a PR; never commit to \`main\`.`;
-function publish(o, owner) {
+Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first, then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
+function publish(o) {
   const here = { cwd: o.dir };
   step("Installing the e2e browser for the pre-push hook (cached per machine)");
   run("pnpm", ["--dir", "packages/e2e", "exec", "e2e-web", "install", "chromium"], { ...here, stdio: ["ignore", "ignore", "inherit"] });
-  const slug = `${owner}/${o.name}`;
+  const slug = `${o.owner}/${o.name}`;
   step(`Creating github.com/${slug}`);
   run("gh", ["repo", "create", slug, "--private", "--source", ".", "--remote", "origin", "--push"], here);
   for (const [label, color, description] of [
@@ -92,14 +87,15 @@ function publish(o, owner) {
       stdio: "ignore"
     });
   }
-  const issue = output("gh", ["issue", "create", "--repo", slug, "--label", "ready", "--title", "Plan the project from the brief", "--body", PLAN_ISSUE]) ?? "";
-  return { repo: `https://github.com/${slug}`, issue };
+  const repo = `https://github.com/${slug}`;
+  const issue = output("gh", ["issue", "create", "--repo", slug, "--label", "ready", "--title", "Plan the project from the brief", "--body", PLAN_ISSUE]) ?? fail(`the repo was created (${repo}) but the Planner's issue wasn't`);
+  return { repo, issue };
 }
 
 // src/options.ts
 import { readFileSync as readFileSync3 } from "node:fs";
 import { homedir } from "node:os";
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { parseArgs } from "node:util";
 var USAGE = `agent-kit [dir] [options]
@@ -173,7 +169,7 @@ async function getOptions(argv) {
   const briefFile = values["brief-file"];
   const interactive = !values.yes && briefFile !== "-" && process.stdin.isTTY && process.stdout.isTTY;
   let dirArg = positionals[0];
-  let name = values.name ?? (dirArg ? resolve(dirArg).split("/").pop() : void 0);
+  let name = values.name ?? (dirArg ? basename(resolve(dirArg)) : void 0);
   let title = values.title;
   let variant = values.variant;
   let db = values.db;
@@ -192,14 +188,14 @@ async function getOptions(argv) {
         const path = await ask("Path to the owner's brief (blank to add it later):");
         if (path) brief = readBrief(path);
       }
-      if (!values.github)
-        github = /^y/i.test(await ask("Create the private GitHub repo and push? y/N", "N"));
+      github ||= /^y/i.test(await ask("Create the private GitHub repo and push? y/N", "N"));
     } finally {
       rl.close();
     }
   }
   if (!name) fail("pass a [dir] or --name");
   return validate({
+    // The shell expands ~ in arguments; a typed answer needs it done here.
     dir: resolve((dirArg ?? `./${name}`).replace(/^~(?=\/|$)/, homedir())),
     name,
     title: title || titleFromName(name),
@@ -225,23 +221,16 @@ import {
   renameSync,
   writeFileSync
 } from "node:fs";
-import { basename, join as join3 } from "node:path";
-var CACHE = `${join3("packages", "e2e", ".e2e", "cache")}`;
+import { basename as basename2, join as join3, relative, sep } from "node:path";
 var SKIP = /* @__PURE__ */ new Set(["node_modules", ".turbo", "dist"]);
-function walk(dir) {
-  return readdirSync2(dir, { withFileTypes: true }).flatMap((entry) => {
-    const path = join3(dir, entry.name);
-    return entry.isDirectory() ? [...walk(path), { path, isDir: true }] : [{ path, isDir: false }];
-  });
-}
 function copyTemplates(o) {
   mkdirSync(o.dir, { recursive: true });
   for (const layer of layers(o)) {
-    cpSync(layer, o.dir, { recursive: true, filter: (src) => !SKIP.has(basename(src)) });
+    cpSync(layer, o.dir, { recursive: true, filter: (src) => !SKIP.has(basename2(src)) });
   }
-  for (const { path, isDir } of walk(o.dir)) {
-    if (path.includes(CACHE)) continue;
-    const name = basename(path);
+  const entries = readdirSync2(o.dir, { recursive: true, withFileTypes: true }).map((entry) => ({ path: join3(entry.parentPath, entry.name), isDir: entry.isDirectory() })).filter(({ path }) => !relative(o.dir, path).startsWith(E2E_CACHE)).sort((a, b) => b.path.split(sep).length - a.path.split(sep).length);
+  for (const { path, isDir } of entries) {
+    const name = basename2(path);
     if (!isDir) {
       const buffer = readFileSync4(path);
       const text = buffer.includes(0) ? "" : buffer.toString("utf8");
@@ -293,20 +282,14 @@ async function main() {
   const o = await getOptions(process.argv.slice(2));
   if (!o) return;
   step("Checking the machine");
-  const owner = checkMachine(o);
+  checkMachine(o);
   if (o.check) return;
   scaffold(o);
-  let repo = "";
-  let issue = "";
-  if (o.github) {
-    ({ repo, issue } = publish(o, owner ?? fail("no GitHub owner")));
-    if (!issue) fail(`the repo was created (${repo}) but the Planner's issue wasn't`);
-  }
+  const { repo, issue } = o.github ? publish(o) : { repo: "", issue: "" };
   console.log(`
-Done: ${o.dir} (${o.title})
-${o.github ? "" : `
-Next: cd ${o.dir} && ./.agent/init.sh, then read AGENTS.md.
-`}
+Done: ${o.dir} (${o.title})`);
+  if (!o.github) console.log(`Next: cd ${o.dir} && ./.agent/init.sh, then read AGENTS.md.`);
+  console.log(`
 PROJECT_DIR=${o.dir}
 PROJECT_REPO=${repo}
 PROJECT_ISSUE=${issue}`);

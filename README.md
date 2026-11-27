@@ -14,7 +14,6 @@ copy or link to any MOF code or assets.
 - [Start a project](#start-a-project)
   - [With a bot: the agent-kit skill](#with-a-bot-the-agent-kit-skill)
   - [From the command line](#from-the-command-line)
-  - [By hand](#by-hand)
 - [Run it](#run-it)
 - [A project's life with an agent team](#a-projects-life-with-an-agent-team)
 - [Everyday commands](#everyday-commands)
@@ -26,39 +25,38 @@ copy or link to any MOF code or assets.
 
 ## Setting it up
 
-agent-kit is used through one skill, `SKILL.md` at the root of this repo. The skill is
-only instructions. When it runs, it fetches this repo from GitHub (`main`, or
-`AGENT_KIT_REF`) and runs `scripts/kickstart.sh` from it. So a change to the templates
-reaches every bot as soon as it's merged.
+agent-kit is a CLI, run straight from this GitHub repo with `pnpm dlx`. Nothing is
+installed:
+
+```bash
+pnpm --config.dlx-cache-max-age=0 dlx github:irfancoder/agent-kit#semver:^0
+```
+
+`#semver:^0` runs the newest `v0.x.x` release tag. `--config.dlx-cache-max-age=0` makes
+pnpm look that tag up every time; without it, pnpm reuses the version it fetched on an
+earlier run (for a day by default) and you miss new releases. Pin an exact tag
+(`#v0.1.0`) for a repeatable run, or a branch to try a change before it's released.
+
+Every machine or bot environment that runs it needs:
+
+| Tool | Version | Why |
+| --- | --- | --- |
+| Node.js | 24.8 or newer | Runs the CLI; the projects run TypeScript directly |
+| pnpm | 12 | Fetches and runs the CLI; workspaces and the catalog in projects |
+| git | any recent | pnpm fetches the CLI with it; it makes the project's first commit |
+| gh | signed in (only for `--github`) | Creates the project's private repo and its first issue |
+| Docker | running | Local Postgres (not needed for `--db d1`) |
+| Claude Code | signed in with `claude` | Records e2e agent steps, on your Claude Max plan |
 
 **In Rakazo,** add two skills to the bot's skill list:
 
 | Skill | Copy |
 | --- | --- |
-| `agent-kit` | `SKILL.md` from this repo. Recopy it only when `SKILL.md` itself changes |
+| `agent-kit` | `SKILL.md` from this repo. It only holds instructions, and runs the CLI with `pnpm dlx`. Recopy it only when `SKILL.md` itself changes |
 | `hallmark` | `skills/hallmark` from [nutlope/hallmark](https://github.com/nutlope/hallmark) at the commit in `HALLMARK_PIN` (`scripts/install-hallmark.sh`), so it matches the version agent-kit was tested with |
 
-The environment the bot runs in also needs these tools:
-
-| Tool | Version | Why |
-| --- | --- | --- |
-| Node.js | 24.8 or newer | Runs TypeScript files directly (type stripping) |
-| pnpm | 12 | Workspaces and the dependency catalog |
-| git, rsync | any recent | The scaffold copies the template and makes the first commit |
-| gh | signed in, with read access to `irfancoder/agent-kit` | Fetches agent-kit, creates the project's private repo and its first issue |
-| Docker | running | Local Postgres (not needed for `--db d1`) |
-| Claude Code | signed in with `claude` | Records e2e agent steps, on your Claude Max plan |
-
-**On your own machine,** clone the repo and install Hallmark at the pinned version:
-
-```bash
-gh repo clone irfancoder/agent-kit ~/agent-kit
-~/agent-kit/scripts/install-hallmark.sh
-```
-
-To give a local Claude Code the skill too, link the folder:
-`ln -s ~/agent-kit ~/.claude/skills/agent-kit`. The skill then sees the full checkout
-beside its `SKILL.md` and uses it instead of fetching the repo.
+**On your own machine,** install Hallmark at the pinned version with
+`scripts/install-hallmark.sh` from a checkout of this repo.
 
 ## Start a project
 
@@ -71,7 +69,7 @@ skill). The bot:
 2. **proposes** a name, a title and a variant (with a one-line reason), where the
    project goes (default `~/projects/<name>`) and the GitHub owner, then **waits for you
    to confirm or change them**;
-3. **runs `scripts/kickstart.sh`**, which:
+3. **runs the CLI** with `--github`, passing your brief through stdin. The CLI:
    - checks the machine;
    - scaffolds the project, with your brief in `.agent/BRIEF.md` in its first commit;
    - creates the private repo `github.com/<you>/<name>` and pushes;
@@ -83,55 +81,43 @@ From there the team takes over (see
 
 ### From the command line
 
-`kickstart.sh` is what the skill runs, and you can run it yourself:
+Run it in a terminal and it asks for anything you don't pass as a flag:
 
 ```bash
-~/agent-kit/scripts/kickstart.sh --name kedai-stock --title "Kedai Stock" --brief-file brief.md
+pnpm --config.dlx-cache-max-age=0 dlx github:irfancoder/agent-kit#semver:^0 ~/projects/kedai-stock
 ```
 
-It takes `--variant` and `--db` like the scaffold, plus:
-- `--reason` (logged in `.agent/DECISIONS.md`);
-- `--dir` (default `~/projects/<name>`);
-- `--owner` (default: your `gh` user);
-- `--no-remote`, which stops before GitHub.
+```text
+agent-kit [dir] [options]
 
-It stops before creating anything if the machine isn't ready:
-- Node, pnpm or Docker is missing;
-- `gh` isn't signed in;
-- the repo name is taken;
-- agent-kit's e2e cache isn't recorded yet, because the first push would fail
-  ([irfancoder/agent-kit#1](https://github.com/irfancoder/agent-kit/issues/1)).
-
-### By hand
-
-```bash
-~/agent-kit/scaffold.sh ~/projects/budget-tracker --name budget-tracker --title "Budget Tracker"
+  --name <name>            Project name in kebab-case (defaults to the folder name)
+  --title <title>          Display name (defaults to the name in Title Case)
+  --variant <variant>      node-postgres (default) or hono-cloudflare
+  --db <db>                hono-cloudflare only: hyperdrive (default) or d1
+  --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
+  --reason <text>          Why this variant, logged in .agent/DECISIONS.md
+  --github                 Create the private GitHub repo, push, and open the Planner's issue
+  --owner <owner>          GitHub owner for --github (default: the signed-in gh user)
+  --check                  Check the options and the machine, then stop
+  -y, --yes                Don't ask: use the defaults for anything not given
 ```
 
-| Option | Default | |
-| --- | --- | --- |
-| `<dir>` | | Where the project goes. It must not exist yet |
-| `--name` | | kebab-case. It becomes the package scope (`@budget-tracker/web`) |
-| `--title` | from `--name` | The app's display name |
-| `--variant` | `node-postgres` | `node-postgres` or `hono-cloudflare` (see [Variants](#variants)) |
-| `--db` | `hyperdrive` | `hono-cloudflare` only: `hyperdrive` (Postgres) or `d1` (SQLite) |
+With `--yes`, or when nobody is at a terminal (a bot, CI), it uses the defaults instead
+of asking. It:
+1. checks the machine and stops before creating anything if it isn't ready (wrong Node
+   or pnpm, Docker not running, a taken folder or repo name);
+2. copies the template, putting your name and title in place of the `kitapp` /
+   `Kit App` placeholders;
+3. creates `.env` from `.env.example`, writes the brief if you gave one, and installs
+   dependencies;
+4. makes one commit, `chore: scaffold via agent-kit <version>`, on `main`, through the
+   project's own pre-commit hook, so a fresh project always starts green;
+5. with `--github`: creates the private repo, pushes (through the pre-push hook), adds the
+   `ready` and `needs-decision` labels, and opens the Planner's issue.
 
-The command:
-1. copies the template;
-2. puts your name and title in place of the `kitapp` / `Kit App` placeholders;
-3. creates `.env` from `.env.example`;
-4. installs dependencies;
-5. makes one commit, `chore: scaffold via agent-kit <version>`, on `main`.
-
-That commit goes through the project's own pre-commit hook, so a fresh project always
-starts green. Add `--brief-file brief.md` (and `--reason`) to put the owner's brief in
-`.agent/BRIEF.md` in that same commit; `--check` only checks the options and the machine.
-Nothing is pushed. Add a remote when you're ready, for example:
-
-```bash
-cd ~/projects/budget-tracker
-gh repo create irfancoder/budget-tracker --private --source . --push
-```
+`--github` refuses to run until agent-kit's e2e cache is recorded, because the first push
+would fail ([irfancoder/agent-kit#1](https://github.com/irfancoder/agent-kit/issues/1)).
+The last lines printed are `PROJECT_DIR=`, `PROJECT_REPO=` and `PROJECT_ISSUE=`.
 
 ## Run it
 
@@ -312,28 +298,47 @@ The kit itself:
 
 | Path | |
 | --- | --- |
-| `scaffold.sh`, `selftest.sh`, `VERSION` | The command, its test, and the version stamped into each scaffold commit |
-| `templates/shared/` | Files every variant gets |
+| `src/`, `dist/agent-kit.mjs` | The CLI's TypeScript source, and its bundle. `dist/` is committed: `pnpm dlx` runs it without a build step |
+| `package.json` | The CLI's name, `bin`, version (stamped into each scaffold commit) and the files it ships (`dist`, `templates`) |
+| `templates/shared/` | Files every variant gets. `_gitignore` becomes `.gitignore`, since packing drops `.gitignore` files |
 | `templates/node-postgres/base/` | The Fastify api, docker-compose, e2e serve script |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
+| `SKILL.md` | The agent-kit skill: asks for the brief and choices, then runs the CLI |
+| `selftest.sh` | Builds the CLI and scaffolds every variant with it |
 | `scripts/record-e2e-cache.sh` | Records the e2e replay cache that ships in the template |
-| `SKILL.md` | The agent-kit skill: asks for the brief and choices, fetches this repo, runs `kickstart.sh` |
-| `scripts/kickstart.sh` | Starts a project from a brief: checks, scaffold, private repo, Planner issue |
 | `scripts/install-hallmark.sh` | Installs Hallmark at the pinned commit on a local machine (`HALLMARK_PIN`) |
 | `FINDINGS.md` | Research behind the tool choices |
 
-To change the template:
+Working on it:
 
-1. Edit files under `templates/`. Templates must stay valid as they are: the `kitapp`
-   placeholder is a real package name, so don't use `__NAME__`-style tokens.
+```bash
+pnpm install
+pnpm dev -- /tmp/try-it      # run the CLI from source
+pnpm check                   # type checks, and bundle to dist/agent-kit.mjs (commit it)
+```
+
+To change the template or the CLI:
+
+1. Edit files under `templates/` or `src/`. Templates must stay valid as they are: the
+   `kitapp` placeholder is a real package name, so don't use `__NAME__`-style tokens.
 2. If the example UI or the e2e tests changed, re-record the replay cache with
    `./scripts/record-e2e-cache.sh` (signed in with `claude`), and commit
    `templates/shared/packages/e2e/.e2e/cache`.
-3. Run `./selftest.sh`, or `./selftest.sh node-postgres` for one variant. It scaffolds
-   each variant, runs both hooks with Claude Code signed out, fails on any leftover
-   placeholder. The node-postgres pass goes through `kickstart.sh --no-remote`. It must pass before an update is merged. `KEEP=1` keeps the scaffolded
-   projects so you can look at them.
-4. Bump `VERSION`.
+3. Run `./selftest.sh`, or `./selftest.sh node-postgres` for one variant. It builds the
+   CLI, scaffolds each variant, runs both hooks with Claude Code signed out, and fails on
+   any leftover placeholder. It must pass before an update is merged. `KEEP=1` keeps the
+   scaffolded projects so you can look at them.
+4. Commit `dist/` with the change.
+
+Releasing:
+
+1. Bump `version` in `package.json` and run `pnpm check`.
+2. Commit, including `dist/`.
+3. Tag and push: `git tag v0.2.0 && git push --tags`. `#semver:^0` picks it up straight
+   away.
+
+Use a major bump when the generated layout changes in a way that breaks existing
+projects, or the CLI's flags change in a way that breaks the skill.
 
 Projects don't update themselves from agent-kit. A fix that existing projects need is
 applied to them by hand or through an agent ticket.

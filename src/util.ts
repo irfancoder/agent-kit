@@ -6,6 +6,8 @@ import { fileURLToPath } from 'node:url';
 /** The kit's root: the folder holding package.json, templates/ and dist/. */
 export const KIT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const KIT_VERSION: string = JSON.parse(readFileSync(join(KIT_DIR, 'package.json'), 'utf8')).version;
+/** The e2e replay cache, relative to a project. It's keyed by fixed ids, so it keeps the placeholders. */
+export const E2E_CACHE = join('packages', 'e2e', '.e2e', 'cache');
 
 export class KitError extends Error {}
 
@@ -30,7 +32,7 @@ export function run(cmd: string, args: string[], options: SpawnSyncOptions = {})
 }
 
 /** Runs a command quietly and returns its stdout, or null if it failed or isn't installed. */
-export function output(cmd: string, args: string[], options: SpawnSyncOptions = {}): string | null {
-  const result = spawnSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], ...options });
+export function output(cmd: string, args: string[]): string | null {
+  const result = spawnSync(cmd, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   return result.status === 0 ? String(result.stdout).trim() : null;
 }

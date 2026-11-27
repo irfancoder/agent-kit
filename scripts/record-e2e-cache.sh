@@ -13,8 +13,7 @@ if ! claude auth status 2>/dev/null | grep -Eq '"loggedIn": *true'; then
 fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-(cd "$KIT_DIR" && pnpm install --frozen-lockfile >/dev/null && pnpm build >/dev/null)
-node "$KIT_DIR/dist/agent-kit.mjs" "$WORK/app" --name record-app --yes >/dev/null
+node "$KIT_DIR/src/index.ts" "$WORK/app" --name record-app --yes >/dev/null
 cd "$WORK/app/packages/e2e"
 rm -rf .e2e/cache
 echo "Recording (runs Claude Code on your plan)…"

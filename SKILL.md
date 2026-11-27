@@ -5,7 +5,7 @@ description: Kickstart a new IRFANCODER project with agent-kit. It asks the owne
 
 # agent-kit: kickstart a project
 
-agent-kit is a CLI in the private GitHub repo `irfancoder/agent-kit`. `pnpm dlx` fetches
+agent-kit is a CLI in the GitHub repo `irfancoder/agent-kit`. `pnpm dlx` fetches
 and runs it straight from a release tag, so there's nothing to install. Ask the owner a
 few questions, then run one command. You don't need to read the kit's templates.
 
@@ -60,8 +60,8 @@ AGENT_KIT_BRIEF
 - `#semver:^0` runs the newest `v0.x` release. `--config.dlx-cache-max-age=0` makes pnpm
   look the release up each time instead of reusing a copy from an earlier run.
   `AGENT_KIT_REF` picks a branch or exact tag (`v0.1.0`) instead.
-- `gh` must be signed in, with read access to the repo: pnpm fetches it with git, and the
-  CLI uses the same login to create the project's repo.
+- `gh` must be signed in: `--github` uses it to create the project's private repo and
+  its first issue.
 - Passing `--brief-file -` means nobody is asked anything: anything left out uses its
   default.
 

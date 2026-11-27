@@ -2,32 +2,22 @@ import { checkMachine } from './checks.ts';
 import { publish } from './github.ts';
 import { getOptions } from './options.ts';
 import { scaffold } from './scaffold.ts';
-import { fail, KitError, step } from './util.ts';
+import { KitError, step } from './util.ts';
 
 async function main(): Promise<void> {
   const o = await getOptions(process.argv.slice(2));
   if (!o) return;
 
   step('Checking the machine');
-  const owner = checkMachine(o);
+  checkMachine(o);
   if (o.check) return;
 
   scaffold(o);
-  let repo = '';
-  let issue = '';
-  if (o.github) {
-    ({ repo, issue } = publish(o, owner ?? fail('no GitHub owner')));
-    if (!issue) fail(`the repo was created (${repo}) but the Planner's issue wasn't`);
-  }
+  const { repo, issue } = o.github ? publish(o) : { repo: '', issue: '' };
 
-  console.log(`
-Done: ${o.dir} (${o.title})
-${o.github ? '' : `
-Next: cd ${o.dir} && ./.agent/init.sh, then read AGENTS.md.
-`}
-PROJECT_DIR=${o.dir}
-PROJECT_REPO=${repo}
-PROJECT_ISSUE=${issue}`);
+  console.log(`\nDone: ${o.dir} (${o.title})`);
+  if (!o.github) console.log(`Next: cd ${o.dir} && ./.agent/init.sh, then read AGENTS.md.`);
+  console.log(`\nPROJECT_DIR=${o.dir}\nPROJECT_REPO=${repo}\nPROJECT_ISSUE=${issue}`);
 }
 
 main().catch((error: unknown) => {

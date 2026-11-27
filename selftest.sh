@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Builds the CLI, scaffolds every variant with it into a temp dir, runs both git hooks
-# in each, and checks that no placeholder token is left. Exits non-zero on any failure.
+# Builds the CLI (and checks the committed dist/ matches), scaffolds every variant with
+# it into a temp dir (its first commit runs pre-commit), runs pre-push in each, and
+# checks that no placeholder token is left. Exits non-zero on any failure.
 #
 #   ./selftest.sh                       # all variants
 #   ./selftest.sh node-postgres         # one variant (hono-cloudflare:d1 picks a db)
@@ -30,13 +31,14 @@ export CLAUDE_CONFIG_DIR="$WORK/no-claude-login"
 mkdir -p "$CLAUDE_CONFIG_DIR"
 unset ANTHROPIC_API_KEY
 
+FAILED=()
 echo "==> Building the CLI"
 (cd "$KIT_DIR" && pnpm install --frozen-lockfile >/dev/null && pnpm check >/dev/null)
-if ! git -C "$KIT_DIR" diff --quiet -- dist; then
-  echo "    note: dist/ changed; commit it, since pnpm dlx runs it as committed"
+# pnpm dlx runs dist/ as committed, so it must match the source.
+if ! git -C "$KIT_DIR" diff --quiet HEAD -- dist; then
+  echo "    FAIL: dist/ doesn't match src/; commit the rebuilt dist/"; FAILED+=("dist")
 fi
 
-FAILED=()
 for spec in "${VARIANTS[@]}"; do
   variant="${spec%%:*}"; db=""; [[ "$spec" == *:* ]] && db="${spec#*:}"
   name="selftest-${variant}${db:+-$db}"
@@ -52,6 +54,7 @@ for spec in "${VARIANTS[@]}"; do
   if [[ "$variant" == node-postgres ]] && ! grep -q 'A brief, word for word.' "$dir/.agent/BRIEF.md"; then
     echo "    FAIL: the brief wasn't recorded"; FAILED+=("$spec:brief")
   fi
+  [[ -f "$dir/.gitignore" ]] || { echo "    FAIL: no .gitignore (from _gitignore)"; FAILED+=("$spec:gitignore"); }
   # Avoid clashing with anything already listening on the default ports.
   if grep -q '^POSTGRES_PORT=' "$dir/.env" 2>/dev/null; then
     pg="$(free_port)"
@@ -64,7 +67,8 @@ for spec in "${VARIANTS[@]}"; do
   fi
   if find "$dir" -name '*kitapp*' -not -path '*/node_modules/*' | grep .; then FAILED+=("$spec:paths"); fi
 
-  for hook in pre-commit pre-push; do
+  # The scaffold's own commit already ran pre-commit, so only pre-push is left.
+  for hook in pre-push; do
     echo "==> $spec: $hook"
     if ! (cd "$dir" && pnpm exec lefthook run "$hook" --all-files) >"$WORK/$name.$hook.log" 2>&1; then
       echo "    FAIL: $hook (log: $WORK/$name.$hook.log)"; tail -40 "$WORK/$name.$hook.log"; FAILED+=("$spec:$hook")

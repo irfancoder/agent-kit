@@ -1,22 +1,18 @@
 import type { Options } from './options.ts';
-import { output, run, step } from './util.ts';
+import { fail, output, run, step } from './util.ts';
 
-const PLAN_ISSUE = `Read \`AGENTS.md\`, then \`.agent/BRIEF.md\`.
+// Only what the issue adds; AGENTS.md holds the rules.
+const PLAN_ISSUE = `Read \`AGENTS.md\`, then plan the project from \`.agent/BRIEF.md\`: \`GOAL.md\`, \`SPEC.md\` and \`feature_list.json\`.
 
-- Write \`.agent/GOAL.md\` (frozen once merged), \`.agent/SPEC.md\` and \`.agent/feature_list.json\` (\`pnpm check:agent\` validates it).
-- Open the design-language ticket first, labelled \`ready\`: run the \`design-language\` skill before any UI feature.
-- Open one issue per feature in \`feature_list.json\`, labelled \`ready\` once nothing it depends on is still open.
-- A question only the owner can answer: comment on this issue with your recommendation and add \`needs-decision\`.
-
-Work on a branch and open a PR; never commit to \`main\`.`;
+Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first, then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
 
 /** Creates the private repo, pushes main (through the pre-push hook), and opens the Planner's issue. */
-export function publish(o: Options, owner: string): { repo: string; issue: string } {
+export function publish(o: Options): { repo: string; issue: string } {
   const here = { cwd: o.dir };
   step('Installing the e2e browser for the pre-push hook (cached per machine)');
   run('pnpm', ['--dir', 'packages/e2e', 'exec', 'e2e-web', 'install', 'chromium'], { ...here, stdio: ['ignore', 'ignore', 'inherit'] });
 
-  const slug = `${owner}/${o.name}`;
+  const slug = `${o.owner}/${o.name}`;
   step(`Creating github.com/${slug}`);
   run('gh', ['repo', 'create', slug, '--private', '--source', '.', '--remote', 'origin', '--push'], here);
   for (const [label, color, description] of [
@@ -27,7 +23,9 @@ export function publish(o: Options, owner: string): { repo: string; issue: strin
       stdio: 'ignore',
     });
   }
+  const repo = `https://github.com/${slug}`;
   const issue =
-    output('gh', ['issue', 'create', '--repo', slug, '--label', 'ready', '--title', 'Plan the project from the brief', '--body', PLAN_ISSUE]) ?? '';
-  return { repo: `https://github.com/${slug}`, issue };
+    output('gh', ['issue', 'create', '--repo', slug, '--label', 'ready', '--title', 'Plan the project from the brief', '--body', PLAN_ISSUE]) ??
+    fail(`the repo was created (${repo}) but the Planner's issue wasn't`);
+  return { repo, issue };
 }

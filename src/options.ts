@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { parseArgs } from 'node:util';
 import { fail } from './util.ts';
 
-export const USAGE = `agent-kit [dir] [options]
+const USAGE = `agent-kit [dir] [options]
 
 Creates a project in IRFANCODER's stack, ready for an agent team.
 
@@ -100,7 +100,7 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
   const interactive = !values.yes && briefFile !== '-' && process.stdin.isTTY && process.stdout.isTTY;
 
   let dirArg = positionals[0];
-  let name = values.name ?? (dirArg ? resolve(dirArg).split('/').pop() : undefined);
+  let name = values.name ?? (dirArg ? basename(resolve(dirArg)) : undefined);
   let title = values.title;
   let variant = values.variant;
   let db = values.db;
@@ -114,15 +114,14 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
     try {
       name ??= await ask('Project name, kebab-case:');
       title ??= await ask('Display name:', titleFromName(name));
-      variant ??= await ask('Variant, node-postgres or hono-cloudflare:', 'node-postgres');
+      variant ??= (await ask('Variant, node-postgres or hono-cloudflare:', 'node-postgres'));
       if (variant === 'hono-cloudflare') db ??= await ask('Database, hyperdrive or d1:', 'hyperdrive');
       dirArg ??= await ask('Folder:', `./${name}`);
       if (!briefFile) {
         const path = await ask("Path to the owner's brief (blank to add it later):");
         if (path) brief = readBrief(path);
       }
-      if (!values.github)
-        github = /^y/i.test(await ask('Create the private GitHub repo and push? y/N', 'N'));
+      github ||= /^y/i.test(await ask('Create the private GitHub repo and push? y/N', 'N'));
     } finally {
       rl.close();
     }
@@ -130,6 +129,7 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
 
   if (!name) fail('pass a [dir] or --name');
   return validate({
+    // The shell expands ~ in arguments; a typed answer needs it done here.
     dir: resolve((dirArg ?? `./${name}`).replace(/^~(?=\/|$)/, homedir())),
     name,
     title: title || titleFromName(name),

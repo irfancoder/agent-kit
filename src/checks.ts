@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Options } from './options.ts';
-import { fail, KIT_DIR, output, warn } from './util.ts';
+import { E2E_CACHE, fail, KIT_DIR, output, warn } from './util.ts';
 
 /** Paths of the template layers for these options, in copy order. */
 export function layers(o: Options): string[] {
@@ -12,38 +12,39 @@ export function layers(o: Options): string[] {
   ];
 }
 
-/** Everything that can fail before a file is written. Returns the GitHub owner for --github. */
-export function checkMachine(o: Options): string | undefined {
-  if (existsSync(o.dir)) fail(`${o.dir} already exists`);
+/** "24.8.1" or ">=24.8" -> [24, 8] */
+function majorMinor(version: string): [number, number] {
+  const [, major = '0', minor = '0'] = /(\d+)(?:\.(\d+))?/.exec(version) ?? [];
+  return [Number(major), Number(minor)];
+}
 
-  for (const cmd of ['git', 'pnpm', 'node']) {
-    if (output(cmd, ['--version']) === null) fail(`${cmd} is not installed`);
-  }
-  // The versions the template declares.
+/** Everything that can fail before a file is written. Fills in o.owner for --github. */
+export function checkMachine(o: Options): void {
+  if (existsSync(o.dir)) fail(`${o.dir} already exists`);
+  if (output('git', ['--version']) === null) fail('git is not installed');
+
+  // The versions the template declares. pnpm 10 and older can't switch to the declared major.
   const pkg = JSON.parse(readFileSync(join(KIT_DIR, 'templates/shared/package.json'), 'utf8'));
-  const [needMajor, needMinor = 0] = String(pkg.engines.node).replace(/[^0-9.]/g, '').split('.').map(Number);
-  const [major, minor] = process.versions.node.split('.').map(Number);
+  const [needMajor, needMinor] = majorMinor(pkg.engines.node);
+  const [major, minor] = majorMinor(process.versions.node);
   if (major < needMajor || (major === needMajor && minor < needMinor))
     fail(`Node.js ${pkg.engines.node} is needed (found ${process.version})`);
-  const pnpmMajor = String(pkg.packageManager).split('@')[1].split('.')[0];
-  const pnpm = output('pnpm', ['--version']) ?? '';
-  if (pnpm.split('.')[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
+  const pnpm = output('pnpm', ['--version']) ?? fail('pnpm is not installed');
+  const [pnpmMajor] = majorMinor(pkg.packageManager);
+  if (majorMinor(pnpm)[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
 
   // Variants with a local database run it in Docker.
   if (layers(o).some((layer) => existsSync(join(layer, 'docker-compose.yml'))) && output('docker', ['info']) === null)
     fail("Docker isn't running (the project's database needs it)");
 
-  let owner: string | undefined;
   if (o.github) {
-    owner = o.owner ?? output('gh', ['api', 'user', '-q', '.login']) ?? fail("gh isn't installed or signed in (gh auth login)");
-    if (output('gh', ['repo', 'view', `${owner}/${o.name}`]) !== null) fail(`github.com/${owner}/${o.name} already exists`);
+    o.owner ??= output('gh', ['api', 'user', '-q', '.login']) ?? fail("gh isn't installed or signed in (gh auth login)");
+    if (output('gh', ['repo', 'view', `${o.owner}/${o.name}`]) !== null) fail(`github.com/${o.owner}/${o.name} already exists`);
     // The first push runs the pre-push e2e hook, which replays agent steps from the cache.
-    const cache = join(KIT_DIR, 'templates/shared/packages/e2e/.e2e/cache');
-    if (!readdirSync(cache).some((f) => f.endsWith('.json')))
+    if (!readdirSync(join(KIT_DIR, 'templates/shared', E2E_CACHE)).some((f) => f.endsWith('.json')))
       fail("agent-kit's e2e replay cache isn't recorded yet, so the first push would fail (irfancoder/agent-kit#1)");
   }
 
   if (!/"loggedIn":\s*true/.test(output('claude', ['auth', 'status']) ?? ''))
     warn("Claude Code isn't signed in; the Builder can't record e2e steps until you run `claude` and sign in");
-  return owner;
 }
