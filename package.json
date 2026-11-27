@@ -1,0 +1,28 @@
+{
+  "name": "agent-kit",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Start a project in IRFANCODER's stack, ready for an agent team",
+  "type": "module",
+  "bin": {
+    "agent-kit": "dist/agent-kit.mjs"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node24 --outfile=dist/agent-kit.mjs --banner:js=\"#!/usr/bin/env node\" --log-level=warning",
+    "check": "tsc --noEmit && pnpm build",
+    "dev": "node src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=24.8"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

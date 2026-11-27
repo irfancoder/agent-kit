@@ -1,0 +1,3 @@
+# Settings for developing agent-kit itself (the templates have their own workspace).
+allowBuilds:
+  esbuild: true

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# Scaffolds every variant into a temp dir (node-postgres through kickstart.sh), runs
-# both git hooks in each, and checks that no placeholder token is left. Exits non-zero
-# on any failure.
+# Builds the CLI, scaffolds every variant with it into a temp dir, runs both git hooks
+# in each, and checks that no placeholder token is left. Exits non-zero on any failure.
 #
 #   ./selftest.sh                       # all variants
 #   ./selftest.sh node-postgres         # one variant (hono-cloudflare:d1 picks a db)
@@ -31,26 +30,27 @@ export CLAUDE_CONFIG_DIR="$WORK/no-claude-login"
 mkdir -p "$CLAUDE_CONFIG_DIR"
 unset ANTHROPIC_API_KEY
 
+echo "==> Building the CLI"
+(cd "$KIT_DIR" && pnpm install --frozen-lockfile >/dev/null && pnpm check >/dev/null)
+if ! git -C "$KIT_DIR" diff --quiet -- dist; then
+  echo "    note: dist/ changed; commit it, since pnpm dlx runs it as committed"
+fi
+
 FAILED=()
 for spec in "${VARIANTS[@]}"; do
   variant="${spec%%:*}"; db=""; [[ "$spec" == *:* ]] && db="${spec#*:}"
   name="selftest-${variant}${db:+-$db}"
   dir="$WORK/$name"
   PROJECTS+=("$dir")
-  # node-postgres goes through kickstart (local, no GitHub), which wraps the scaffold.
-  if [[ "$variant" == node-postgres ]]; then
-    echo "==> $spec: kickstart --no-remote"
-    printf 'A brief, word for word.\n' > "$WORK/brief.txt"
-    make=(bash "$KIT_DIR/scripts/kickstart.sh" --name "$name" --brief-file "$WORK/brief.txt" --dir "$dir" --no-remote)
-  else
-    echo "==> $spec: scaffold"
-    make=("$KIT_DIR/scaffold.sh" "$dir" --name "$name" --variant "$variant" ${db:+--db "$db"})
-  fi
-  if ! "${make[@]}" >"$WORK/$name.log" 2>&1; then
+  echo "==> $spec: scaffold"
+  # node-postgres also gets a brief, as a bot passes it (stdin).
+  brief=(); [[ "$variant" == node-postgres ]] && brief=(--brief-file - --reason "selftest")
+  make=(node "$KIT_DIR/dist/agent-kit.mjs" "$dir" --name "$name" --variant "$variant" ${db:+--db "$db"} ${brief[@]+"${brief[@]}"} --yes)
+  if ! printf 'A brief, word for word.\n' | "${make[@]}" >"$WORK/$name.log" 2>&1; then
     echo "    FAIL: scaffold (log: $WORK/$name.log)"; tail -20 "$WORK/$name.log"; FAILED+=("$spec:scaffold"); continue
   fi
   if [[ "$variant" == node-postgres ]] && ! grep -q 'A brief, word for word.' "$dir/.agent/BRIEF.md"; then
-    echo "    FAIL: kickstart didn't record the brief"; FAILED+=("$spec:brief")
+    echo "    FAIL: the brief wasn't recorded"; FAILED+=("$spec:brief")
   fi
   # Avoid clashing with anything already listening on the default ports.
   if grep -q '^POSTGRES_PORT=' "$dir/.env" 2>/dev/null; then
