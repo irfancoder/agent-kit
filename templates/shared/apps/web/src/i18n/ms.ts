@@ -18,5 +18,6 @@ export const ms: Messages = {
   'items.emptyBody': 'Tambah item pertama anda dengan borang di atas.',
   'items.count.one': '{count} item',
   'items.count.other': '{count} item',
+  'toast.close': 'Tutup',
   'theme.dark': 'Mod gelap',
 };

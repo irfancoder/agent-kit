@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { Button } from '@ui-sdk/react/button';
-import { Field, FieldError, FieldLabel } from '@ui-sdk/react/field';
-import { Input } from '@ui-sdk/react/input';
-import { toast } from '@ui-sdk/react/toast';
 import { useState, type FormEvent } from 'react';
 import { Card } from '@/components/Card.tsx';
 import { EmptyState } from '@/components/EmptyState.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { Field, FieldError, FieldLabel } from '@/components/ui/field.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { toast } from '@/components/ui/toast.tsx';
 import { useI18n } from '@/i18n/index.tsx';
 import { itemsQuery, useCreateItem } from './queries.ts';
 
@@ -41,7 +41,7 @@ export function ItemsPage() {
           />
           <FieldError />
         </Field>
-        <Button type="submit" disabled={createItem.isPending} data-variant="solid">
+        <Button type="submit" disabled={createItem.isPending} variant="solid">
           {createItem.isPending ? t('items.adding') : t('items.add')}
         </Button>
       </form>

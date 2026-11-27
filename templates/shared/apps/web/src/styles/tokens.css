@@ -6,20 +6,12 @@
  * the values in this file and everything follows:
  * - @theme static holds colours, fonts, text sizes, radii, shadows and eases. Each is a
  *   Tailwind utility (bg-paper, text-ink, font-display, rounded-card) and a CSS variable.
- * - :root holds the rest, and points ui-sdk's --ui-* tokens (web.css) at these roles.
+ * - :root holds the rest.
  *
  * Neutral starter values: no design language has been chosen yet. Each colour is
- * light-dark(<light>, <dark>). The OS picks one (web.css sets color-scheme: light dark);
- * data-color-scheme="light" or "dark" on <html> (src/lib/color-scheme.ts) pins it.
+ * light-dark(<light>, <dark>); app.css decides which one shows.
  * There is no dark: variant: write colours as light-dark() tokens, not per-scheme classes.
  */
-[data-color-scheme='light'] {
-  color-scheme: light;
-}
-[data-color-scheme='dark'] {
-  color-scheme: dark;
-}
-
 @theme static {
   /* No Tailwind palette: every colour comes from a role below. */
   --color-*: initial;
@@ -102,26 +94,4 @@
   --z-modal: 400;
   --z-toast: 500;
   --z-tooltip: 600;
-
-  /* ui-sdk's web.css reads these. Point them at roles, never at raw values. */
-  --ui-background: var(--color-paper);
-  --ui-foreground: var(--color-ink);
-  --ui-muted: var(--color-paper-3);
-  --ui-muted-foreground: var(--color-muted);
-  --ui-border: var(--color-rule);
-  --ui-input: var(--color-control-edge);
-  --ui-primary: var(--color-primary);
-  --ui-primary-foreground: var(--color-primary-ink);
-  --ui-destructive: var(--color-error);
-  /* web.css's ring is the only focus mark on buttons, so it stays solid to clear 3:1. */
-  --ui-ring: var(--color-focus);
-  --ui-ring-border: var(--color-focus);
-  --ui-overlay: var(--color-overlay);
-  --ui-shadow: var(--shadow-pop);
-  --ui-radius: var(--radius-control);
-  --ui-font-sans: var(--font-body);
-  --ui-font-mono: var(--font-mono);
-  --ui-font-size: var(--text-sm);
-  --ui-spacing: var(--space-2xs);
-  --ui-line-height: var(--leading-normal);
 }

@@ -13,10 +13,9 @@ the repo root. The Planner makes that the first ticket, before any UI feature.
 - Values live in `apps/web/src/styles/tokens.css`, in Hallmark's token names. They are
   Tailwind utilities (`bg-paper`, `text-ink`, `rounded-card`); Tailwind's own palette is
   off. Nothing hard-codes a colour, size, radius or shadow.
-- Components: [ui-sdk](https://ui-sdk.dev), imported per component
-  (`@ui-sdk/react/select`), styled by `@ui-sdk/core/web.css` through the `--ui-*` tokens.
-  Look a component up in `node_modules/@ui-sdk/react/docs/llms.txt` before building one;
-  never hand-roll a listbox, menu, dialog or tabs.
+- Components: the wrappers in `apps/web/src/components/ui/`, around the headless library
+  described in `.agent/COMPONENTS.md`. Look a component up in the library's docs before
+  building one; never hand-roll a listbox, menu, dialog or tabs.
 
 ## Type and spacing scale
 
@@ -29,7 +28,7 @@ Hallmark's app-screen scale (ratio 1.2 from 16px), in `tokens.css`:
 | `--text-lg` / `-xl`           | 1.2 / 1.44rem                    | card and section titles    |
 | `--text-2xl` / `-3xl`         | 1.728 / 2.074rem                 | page headings              |
 | `--space-2xs` … `--space-2xl` | 4 / 8 / 12 / 16 / 24 / 40 / 64px | gaps and padding           |
-| `--ui-spacing` × 8            | 32px                             | control heights (web.css)  |
+| control height                | 32px                             | buttons, inputs, toggles   |
 
 ## Reference screenshots
 

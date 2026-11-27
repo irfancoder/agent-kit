@@ -11,16 +11,49 @@ import {
 } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
 import { layers } from './checks.ts';
-import type { Options } from './options.ts';
-import { E2E_CACHE, KIT_VERSION, run, step } from './util.ts';
+import { describe, type Options } from './options.ts';
+import { E2E_CACHE, KIT_DIR, KIT_VERSION, run, step } from './util.ts';
 
 const SKIP = new Set(['node_modules', '.turbo', 'dist']);
+
+/**
+ * A component library's ui.json adds its packages to the web app and the catalog, and
+ * its Renovate rules, so a project carries only the library it chose.
+ */
+function addComponentLibrary(o: Options): void {
+  const ui: { catalog: Record<string, string>; renovate: object[] } = JSON.parse(
+    readFileSync(join(KIT_DIR, 'templates/ui', o.ui ?? '', 'ui.json'), 'utf8'),
+  );
+  const webPath = join(o.dir, 'apps/web/package.json');
+  const web = JSON.parse(readFileSync(webPath, 'utf8'));
+  for (const name of Object.keys(ui.catalog)) web.dependencies[name] = 'catalog:';
+  web.dependencies = Object.fromEntries(Object.entries(web.dependencies).sort(([a], [b]) => a.localeCompare(b)));
+  writeFileSync(webPath, `${JSON.stringify(web, null, 2)}\n`);
+
+  const workspacePath = join(o.dir, 'pnpm-workspace.yaml');
+  const pins = Object.entries(ui.catalog).map(([name, version]) => `  '${name}': ${version}`);
+  const workspace = readFileSync(workspacePath, 'utf8').replace(
+    /^ {2}# component library: .*$/m,
+    [`  # component library: ${o.ui}`, ...pins].join('\n'),
+  );
+  writeFileSync(workspacePath, workspace);
+
+  if (ui.renovate.length) {
+    const renovatePath = join(o.dir, 'renovate.json');
+    const renovate = JSON.parse(readFileSync(renovatePath, 'utf8'));
+    renovate.packageRules.push(...ui.renovate);
+    writeFileSync(renovatePath, `${JSON.stringify(renovate, null, 2)}\n`);
+  }
+}
 
 /** Copies the templates and replaces the kitapp / Kit App placeholders in paths and contents. */
 function copyTemplates(o: Options): void {
   mkdirSync(o.dir, { recursive: true });
   for (const layer of layers(o)) {
-    cpSync(layer, o.dir, { recursive: true, filter: (src) => !SKIP.has(basename(src)) });
+    cpSync(layer, o.dir, {
+      recursive: true,
+      filter: (src) => !SKIP.has(basename(src)) && src !== join(layer, 'ui.json'),
+    });
   }
   // Deepest first, so a folder is renamed only after everything inside it is handled.
   const entries = readdirSync(o.dir, { recursive: true, withFileTypes: true })
@@ -54,8 +87,7 @@ function recordBrief(o: Options): void {
     join(agent, 'BRIEF.md'),
     `# Brief\n\n<!-- The owner's brief, word for word. Received ${today}. -->\n\n${o.brief}`,
   );
-  const variant = o.db ? `${o.variant} with ${o.db}` : o.variant;
-  appendFileSync(join(agent, 'DECISIONS.md'), `${today} — variant: ${variant} — ${o.reason ?? 'the default'}\n`);
+  appendFileSync(join(agent, 'DECISIONS.md'), `${today} — stack: ${describe(o)} — ${o.reason ?? 'the defaults'}\n`);
   appendFileSync(
     join(agent, 'PROGRESS.md'),
     `${today} | lead | kickstart | scaffolded via agent-kit ${KIT_VERSION} with the brief | Planner: GOAL, SPEC and feature list\n`,
@@ -64,8 +96,9 @@ function recordBrief(o: Options): void {
 
 /** Creates the project and makes its first commit, through its own pre-commit hook. */
 export function scaffold(o: Options): void {
-  step(`Scaffolding ${o.name} (${o.variant}${o.db ? `, ${o.db}` : ''}) into ${o.dir}`);
+  step(`Scaffolding ${o.name} (${describe(o)}) into ${o.dir}`);
   copyTemplates(o);
+  addComponentLibrary(o);
   copyFileSync(join(o.dir, '.env.example'), join(o.dir, '.env'));
   recordBrief(o);
   const here = { cwd: o.dir };

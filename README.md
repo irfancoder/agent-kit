@@ -68,8 +68,9 @@ skill). The bot:
 
 1. **asks for your brief**, in your own words, and keeps it word for word;
 2. **proposes** a name, a title and a variant (with a one-line reason), where the
-   project goes (default `~/projects/<name>`) and the GitHub owner, then **waits for you
-   to confirm or change them**;
+   component library (Base UI unless you ask for ui-sdk), where the project goes (default
+   `~/projects/<name>`) and the GitHub owner, then **waits for you to confirm or change
+   them**;
 3. **runs the CLI** with `--github`, passing your brief through stdin. The CLI:
    - checks the machine;
    - scaffolds the project, with your brief in `.agent/BRIEF.md` in its first commit;
@@ -95,6 +96,7 @@ agent-kit [dir] [options]
   --title <title>          Display name (defaults to the name in Title Case)
   --variant <variant>      node-postgres (default) or hono-cloudflare
   --db <db>                hono-cloudflare only: hyperdrive (default) or d1
+  --ui <library>           Headless components: base-ui (default, stable) or ui-sdk (beta)
   --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
   --reason <text>          Why this variant, logged in .agent/DECISIONS.md
   --github                 Create the private GitHub repo, push, and open the Planner's issue
@@ -198,11 +200,11 @@ Adding things:
 
 - **A screen:** a file in `apps/web/src/routes/` (TanStack Router, file-based; the dev
   server updates the route tree). Feature code goes in `apps/web/src/features/<feature>/`.
-- **A component:** import it from [ui-sdk](https://ui-sdk.dev), one entry each
-  (`import { Select } from '@ui-sdk/react/select'`). Its docs for the installed version are
-  in `node_modules/@ui-sdk/react/docs` (start at `llms.txt`). Style with Tailwind utilities
-  on the token names (`bg-paper`, `text-muted`, `rounded-card`). Shared pieces ui-sdk
-  doesn't ship (`Card`, `EmptyState`) are in `apps/web/src/components`.
+- **A component:** pages import from `@/components/ui/*`, wrappers around the project's
+  headless library. `.agent/COMPONENTS.md` says where that library's docs are and how to
+  add a wrapper. Style with Tailwind utilities on the token names (`bg-paper`,
+  `text-muted`, `rounded-card`). Shared pieces (`Card`, `EmptyState`) are in
+  `apps/web/src/components`.
 - **Text:** add the key to `apps/web/src/i18n/en.ts` and `ms.ts`, then use `t('key')`.
 - **An api route:** add it to `packages/contracts/src/routes.ts` (Valibot schemas), then
   register it in the api with `defineRoute`. Requests and responses are validated against
@@ -216,8 +218,7 @@ Adding things:
 
 ## Design language
 
-A new project looks neutral on purpose: greys, system fonts, and ui-sdk's default
-component styles. Each project gets its own look once, through the **design-language**
+A new project looks neutral on purpose: greys, system fonts, plain controls. Each project gets its own look once, through the **design-language**
 skill it ships with (`.claude/skills/design-language`). Ask an agent to run the
 design-language skill, or make it the Planner's first ticket.
 
@@ -237,8 +238,8 @@ How it fits together:
   and its Tailwind v4 layout. Each colour is written once as `light-dark(<light>, <dark>)`.
 - The tokens are Tailwind utilities (`bg-paper`, `text-ink`, `rounded-card`). Tailwind's
   own palette is switched off, so raw colours like `bg-zinc-100` don't exist.
-- The same file points ui-sdk's `--ui-*` variables at the tokens, so the components follow
-  too. A new design language is a new `tokens.css`; components and pages don't change.
+- The components read the same tokens (through Tailwind, or ui-sdk's `--ui-*` variables),
+  so a new design language is a new `tokens.css`; components and pages don't change.
 - Light and dark follow the OS. The Dark mode toggle in the header pins one, and the
   choice is saved.
 
@@ -260,13 +261,27 @@ Everything else is the same in all three: the web app, `packages/contracts`, the
 shape, `GET /healthz`, `/openapi.json` with Scalar at `/docs`, the e2e tests, the hooks and
 `.agent/`.
 
+### Component library
+
+The web app's components are headless: a library handles behaviour, focus and ARIA, and
+the project styles them with Tailwind on its tokens. Pages import small wrappers from
+`@/components/ui/*`, so they read the same whichever library is underneath.
+
+| `--ui` | Library | Styled by |
+| --- | --- | --- |
+| `base-ui` (default) | [Base UI](https://base-ui.com) `@base-ui/react`, stable | Tailwind classes in the wrappers |
+| `ui-sdk` | [ui-sdk](https://ui-sdk.dev) `@ui-sdk/react`, in beta and changing quickly | ui-sdk's `web.css`, through `--ui-*` variables that point at the tokens |
+
+Each project's `.agent/COMPONENTS.md` says which one it has, where its docs are, and how
+to add a component.
+
 ## What a project gets
 
 - **Workspace:** a pnpm workspace with catalogs (every third-party version pinned once),
   Turborepo and Renovate.
 - **`apps/web`:**
   - React 19, Rsbuild, TanStack Router and Query, ky;
-  - [ui-sdk](https://ui-sdk.dev) components styled with Tailwind v4;
+  - headless components styled with Tailwind v4, from your choice of library (below);
   - typed `t()` in English and Bahasa Melayu.
 - **`apps/api`:** the variant's api, validated against `packages/contracts` (Valibot),
   which also generates the OpenAPI document.
@@ -305,6 +320,7 @@ The kit itself:
 | `templates/shared/` | Files every variant gets. `_gitignore` becomes `.gitignore`, since packing drops `.gitignore` files |
 | `templates/node-postgres/base/` | The Fastify api, docker-compose, e2e serve script |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
+| `templates/ui/base-ui/`, `templates/ui/ui-sdk/` | Each component library's `ui.json` (its packages, catalog versions and Renovate rule, merged in by the CLI), `global.css`, `components/ui` wrappers and `.agent/COMPONENTS.md` |
 | `SKILL.md` | The agent-kit skill: asks for the brief and choices, then runs the CLI |
 | `test/selftest.ts` | `pnpm test`: builds the CLI and scaffolds every variant with it |
 | `scripts/record-cache.ts` | `pnpm record-cache`: records the e2e replay cache that ships in the template |

@@ -3,7 +3,8 @@
 // checks that no placeholder is left. Exits non-zero on any failure.
 //
 //   pnpm test                          all variants
-//   pnpm test node-postgres            one (hono-cloudflare:d1 picks a database)
+//   pnpm test node-postgres            one variant[:db][+ui]: hono-cloudflare:d1 picks a
+//                                      database, node-postgres+ui-sdk a component library
 //   KEEP=1 pnpm test                   keep the projects to look at
 //
 // Needs Docker running and the e2e browser (pnpm --dir <project>/packages/e2e exec
@@ -13,11 +14,12 @@ import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, 
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
+import { UIS } from '../src/options.ts';
 import { E2E_CACHE, KIT_DIR } from '../src/util.ts';
 
 const variants = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : ['node-postgres', 'hono-cloudflare:hyperdrive', 'hono-cloudflare:d1'];
+  : ['node-postgres', 'hono-cloudflare:hyperdrive+ui-sdk', 'hono-cloudflare:d1'];
 const work = mkdtempSync(join(tmpdir(), 'agent-kit-selftest-'));
 const failed: string[] = [];
 const projects: string[] = [];
@@ -51,17 +53,17 @@ function freePort(): Promise<number> {
   });
 }
 
-/** Files and folders that still carry a placeholder, outside the e2e cache. */
-function leftovers(dir: string): string[] {
+/** Files and folders that still carry one of the needles (the placeholders by default), outside the e2e cache. */
+function leftovers(dir: string, needles = ['kitapp', 'Kit App']): string[] {
   return readdirSync(dir, { recursive: true, withFileTypes: true })
     .map((entry) => join(entry.parentPath, entry.name))
     .filter((path) => !/(^|\/)(node_modules|\.git)(\/|$)/.test(relative(dir, path)))
     .filter((path) => !relative(dir, path).startsWith(E2E_CACHE))
     .filter((path) => {
-      if (path.includes('kitapp')) return true;
+      if (needles.some((needle) => relative(dir, path).includes(needle))) return true;
       try {
         const text = readFileSync(path, 'utf8');
-        return text.includes('kitapp') || text.includes('Kit App');
+        return needles.some((needle) => text.includes(needle));
       } catch {
         return false; // a folder
       }
@@ -78,15 +80,17 @@ try {
     fail("dist/ doesn't match src/; commit the rebuilt dist/");
 
   for (const spec of variants) {
-    const [variant, db] = spec.split(':');
-    const name = `selftest-${variant}${db ? `-${db}` : ''}`;
+    // variant[:db][+ui]; no +ui tests the CLI's default library.
+    const [layers, ui] = spec.split('+');
+    const [variant, db] = layers.split(':');
+    const name = `selftest-${variant}${db ? `-${db}` : ''}${ui ? `-${ui}` : ''}`;
     const dir = join(work, name);
     projects.push(dir);
 
     console.log(`==> ${spec}: scaffold`);
     // node-postgres also gets a brief, as a bot passes it (stdin).
     const brief = variant === 'node-postgres' ? ['--brief-file', '-', '--reason', 'selftest'] : [];
-    const args = [join(KIT_DIR, 'dist/agent-kit.mjs'), dir, '--name', name, '--variant', variant, ...(db ? ['--db', db] : []), ...brief, '--yes'];
+    const args = [join(KIT_DIR, 'dist/agent-kit.mjs'), dir, '--name', name, '--variant', variant, ...(db ? ['--db', db] : []), ...(ui ? ['--ui', ui] : []), ...brief, '--yes'];
     const log = join(work, `${name}.log`);
     if (!sh('node', args, work, log, 'A brief, word for word.\n')) {
       fail(`${spec}:scaffold`, log);
@@ -95,6 +99,15 @@ try {
     if (brief.length && !readFileSync(join(dir, '.agent/BRIEF.md'), 'utf8').includes('A brief, word for word.'))
       fail(`${spec}:brief`);
     if (!existsSync(join(dir, '.gitignore'))) fail(`${spec}:gitignore (from _gitignore)`);
+    // Only the chosen component library may appear in the project.
+    const chosen = ui ?? UIS[0];
+    const packages: Record<string, string> = { 'base-ui': '@base-ui/', 'ui-sdk': '@ui-sdk/' };
+    const manifests = ['apps/web/package.json', 'pnpm-workspace.yaml', 'renovate.json'].map((f) => readFileSync(join(dir, f), 'utf8'));
+    if (!manifests[0].includes(packages[chosen])) fail(`${spec}:${chosen} isn't in apps/web/package.json`);
+    for (const other of UIS.filter((u) => u !== chosen)) {
+      const leaked = manifests.some((text) => text.includes(packages[other])) || leftovers(join(dir, 'apps/web/src'), [packages[other]]).length;
+      if (leaked) fail(`${spec}:${other} leaked into a ${chosen} project`);
+    }
 
     // Avoid clashing with anything already listening on the default Postgres port.
     const envFile = join(dir, '.env');

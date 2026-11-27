@@ -16,6 +16,7 @@ export const en = {
   'items.emptyBody': 'Add your first item with the form above.',
   'items.count.one': '{count} item',
   'items.count.other': '{count} items',
+  'toast.close': 'Close',
   'theme.dark': 'Dark mode',
 } as const;
 

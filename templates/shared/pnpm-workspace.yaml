@@ -30,8 +30,7 @@ catalog:
   '@tanstack/router-plugin': 1.169.0
   '@tanstack/react-query': 5.108.4
   ky: 2.2.0
-  '@ui-sdk/react': 0.1.0-beta.17
-  '@ui-sdk/core': 0.1.0-beta.17
+  # component library: filled in by agent-kit from templates/ui/<library>/ui.json
   tailwindcss: 4.3.5
   '@tailwindcss/postcss': 4.3.5
   # api (node-postgres)

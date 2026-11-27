@@ -1,11 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
-import { Preferences } from '@ui-sdk/react/preferences';
-import { ToastRegion } from '@ui-sdk/react/toast';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { ToastProvider } from '@/components/ui/toast.tsx';
 import { I18nProvider } from '@/i18n/index.tsx';
-import { colorScheme } from '@/lib/color-scheme.ts';
 import { routeTree } from './routeTree.gen.ts';
 import './styles/global.css';
 
@@ -26,13 +24,12 @@ if (!root) throw new Error('#root is missing from index.html');
 
 createRoot(root).render(
   <StrictMode>
-    <Preferences preferences={[colorScheme]}>
-      <I18nProvider>
-        <QueryClientProvider client={queryClient}>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <ToastProvider>
           <RouterProvider router={router} />
-        </QueryClientProvider>
-      </I18nProvider>
-      <ToastRegion />
-    </Preferences>
+        </ToastProvider>
+      </QueryClientProvider>
+    </I18nProvider>
   </StrictMode>,
 );

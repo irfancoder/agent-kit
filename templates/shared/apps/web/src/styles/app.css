@@ -1,0 +1,32 @@
+/*
+ * App wiring, not design: the design language lives in tokens.css.
+ *
+ * Light and dark: the OS picks one, and data-color-scheme="light" or "dark" on <html>
+ * (src/lib/color-scheme.ts) pins it. These rules are also what the build needs: it
+ * rewrites light-dark() for older browsers, and the rewrite only works where
+ * color-scheme is declared. Without them every colour is invalid.
+ */
+:root,
+[data-color-scheme='system'] {
+  color-scheme: light dark;
+}
+[data-color-scheme='light'] {
+  color-scheme: light;
+}
+[data-color-scheme='dark'] {
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body {
+    overflow-x: clip;
+  }
+  body {
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+}

@@ -35,40 +35,49 @@ Docs: [Quickstart](https://e2e.com/docs/quickstart), [Cache](https://e2e.com/doc
 - **Telemetry switch:** `E2E_TELEMETRY_DISABLED=1` (set in the package scripts), or `npx e2e telemetry disable`.
 - **Browsers:** `pnpm --dir packages/e2e exec e2e-web install chromium` (about 100 MB, cached per machine).
 
-## Components and styling: ui-sdk and Tailwind v4
+## Components and styling
 
-Docs: [ui-sdk](https://ui-sdk.dev/docs) (also shipped in `node_modules/@ui-sdk/react/docs`), [Tailwind v4](https://tailwindcss.com/docs).
+Docs: [Base UI](https://base-ui.com) and [ui-sdk](https://ui-sdk.dev/docs) (both also ship their docs in `node_modules`), [Tailwind v4](https://tailwindcss.com/docs).
 
-An earlier version used StyleX components on Base UI, from a private shadcn registry in
-this repo. After the Hallmark trial run they were replaced, for three reasons:
-Hallmark's linter reads plain CSS and Tailwind class strings but not `stylex.create`
-objects, so the Floor rules went unchecked in components; Hallmark's CSS had to be
-rewritten into StyleX by hand; and StyleX's compiler gotchas (dropped token imports,
-hashed cross-file constants) cost every run time.
+Hallmark's linter reads plain CSS and Tailwind class strings, so components are styled
+with Tailwind on the tokens (not CSS-in-JS), and every colour, font and radius comes from
+`tokens.css`.
 
-- **ui-sdk** (`@ui-sdk/react` + `@ui-sdk/core`, Apache-2.0, vercel-labs/ui), pinned at
-  `0.1.0-beta.17`: it's in beta and its APIs may change. It has its own behaviours (no
-  Base UI, Radix or React Aria), renders no styles, and imports one entry per component.
-  Its docs and an agent skill ship inside the package, matching the installed version.
-  Its agent bridge (`createAgent`, WebMCP) isn't wired in yet.
-- **Default look:** `@ui-sdk/core/web.css`, imported after Tailwind with
-  `layer(components)`, under `@layer ui-sdk;` declared first. It reads only `--ui-*`
-  variables, which `tokens.css` points at Hallmark's roles. Its focus ring is
-  `--ui-ring`, mapped to `--color-focus` (solid) so it clears 3:1.
-- **Tailwind v4** through `@tailwindcss/postcss` (Rsbuild picks up `postcss.config.mjs`).
-  `tokens.css` uses Hallmark's Tailwind layout (`@theme static` for colours, fonts, text,
-  radii, shadows and eases), with `--color-*: initial` so Tailwind's palette doesn't exist.
-  No `--spacing-*` names, as Hallmark advises.
-- **Colour scheme:** ui-sdk's `createColorScheme` writes `data-color-scheme` on `<html>`
-  (`system`, `light`, `dark`) and stores the choice in localStorage. `preferencesScript`
-  is injected into `index.html` by `rsbuild.config.ts`, so the saved scheme applies before
-  the first paint. Rsbuild's Lightning CSS rewrites `light-dark()` into its
-  `--lightningcss-light/dark` fallback and adds the matching variables to each
-  `color-scheme` rule, so switching works.
-- **Hallmark's linter on the neutral template:** it flags no stamp (added by the Hallmark
-  run) and no `:focus-visible`/`:active`/`:disabled` styling, because web.css is in
-  `node_modules`. The design-language skill restates those states in `global.css`.
-- **Gotcha:** ui-sdk's solid button is `data-variant="solid"`, not `primary`.
+**Two headless libraries, chosen with `--ui`.** Pages import wrappers from
+`@/components/ui/*` (button, field, input, toggle, toast) with the same props either way,
+so only `templates/ui/<library>/` differs: its `ui.json` (packages, catalog versions and
+Renovate rule, which the CLI merges into the project, so a project carries only the
+library it chose), `global.css`, the wrappers and `.agent/COMPONENTS.md`. The colour-scheme
+rules and base styles are in a shared `app.css`, so `tokens.css` holds only design values.
+
+- **Base UI** (`@base-ui/react` 1.9.0, MIT) is the default: stable, from the Radix and
+  Material UI teams. It renders no styles; the wrappers carry Tailwind classes, with the
+  shared control shape and focus ring in `styles.ts`. Its toasts use a global manager
+  (`Toast.createToastManager()`), so `toast.error()` works from anywhere. It doesn't set
+  `data-slot`.
+- **ui-sdk** (`@ui-sdk/react` + `@ui-sdk/core` 0.1.0-beta.17, Apache-2.0) is the option:
+  in beta and shipping often. Its `web.css` gives every component a look and reads only
+  `--ui-*` variables, which `global.css` points at the tokens. It puts `data-slot` on
+  every part (which clashes with Hallmark's `base.css`, see below), and Hallmark's linter
+  can't see its focus or pressed styles in `node_modules`. Its agent bridge (`createAgent`,
+  WebMCP) isn't wired in.
+
+**Tailwind v4** through `@tailwindcss/postcss` (Rsbuild picks up `postcss.config.mjs`).
+`tokens.css` uses Hallmark's Tailwind layout (`@theme static` for colours, fonts, text,
+radii, shadows and eases), with `--color-*: initial` so Tailwind's palette doesn't exist.
+No `--spacing-*` names, as Hallmark advises.
+
+**Colour scheme:** a small module of the template's own (`lib/color-scheme.ts`) writes
+`data-color-scheme` on `<html>` (`system`, `light`, `dark`) and stores the choice;
+`rsbuild.config.ts` puts a one-line script in `index.html` so the saved scheme applies
+before the first paint. Rsbuild's Lightning CSS rewrites `light-dark()` into its
+`--lightningcss-light/dark` fallback and defines those variables only in rules that
+declare `color-scheme`. So `app.css` declares it for every scheme: without that rule every
+colour is invalid.
+
+**Gotcha:** Rsbuild 2 compiles dynamic imports lazily in dev by default, and every
+code-split route is one. The first visit then sends the component library through an HMR
+update it can't accept, and the page reloads mid-e2e. `dev.lazyCompilation` is off.
 
 ## Hallmark (design language)
 

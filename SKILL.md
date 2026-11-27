@@ -36,10 +36,18 @@ From the brief, propose:
   | Cloudflare plus D1, SQLite, or "no separate database" | `--variant hono-cloudflare --db d1` |
 
   Add a one-line reason. It's logged in the project's `.agent/DECISIONS.md`.
+- **Components**, the headless component library:
+
+  | Choice | When |
+  | --- | --- |
+  | `--ui base-ui` | The default: [Base UI](https://base-ui.com), stable |
+  | `--ui ui-sdk` | Only if the owner asks for it: [ui-sdk](https://ui-sdk.dev), in beta and changing quickly |
+
 - **Where:** the folder (default `~/projects/<name>`) and the GitHub owner (default: the
   signed-in `gh` user). The repo is always private.
 
-Show the choices in one short message and ask the owner to confirm or change them. Don't
+Show the choices in one short message, including the component library (Base UI unless
+they say otherwise), and ask the owner to confirm or change them. Don't
 create anything before they say yes.
 
 ## 3. Run the CLI
@@ -49,7 +57,7 @@ in a temp file:
 
 ```bash
 pnpm --config.dlx-cache-max-age=0 dlx "github:irfancoder/agent-kit#${AGENT_KIT_REF:-semver:^0}" \
-  <folder> --name <name> --title "<Title>" --variant <variant> [--db d1] \
+  <folder> --name <name> --title "<Title>" --variant <variant> [--db d1] --ui <base-ui|ui-sdk> \
   --reason "<why>" [--owner <owner>] --github --brief-file - <<'AGENT_KIT_BRIEF'
 <the owner's brief, word for word>
 AGENT_KIT_BRIEF
@@ -78,7 +86,7 @@ Code not being signed in; it doesn't stop the run.
 
 Tell the owner, in a few lines:
 - the repo link and the Planner's issue link;
-- the name, title and variant, and where the project is;
+- the name, title, variant and component library, and where the project is;
 - any warnings, with the fix (for example, run `claude` and sign in);
 - what happens next: the Planner picks up the issue and writes the goal, the spec and the
   feature list. The first ticket after that is the design language, which needs the

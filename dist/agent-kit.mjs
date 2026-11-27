@@ -38,7 +38,8 @@ function layers(o) {
   return [
     join2(KIT_DIR, "templates/shared"),
     join2(KIT_DIR, "templates", o.variant, "base"),
-    ...o.db ? [join2(KIT_DIR, "templates", o.variant, `db-${o.db}`)] : []
+    ...o.db ? [join2(KIT_DIR, "templates", o.variant, `db-${o.db}`)] : [],
+    join2(KIT_DIR, "templates/ui", o.ui ?? "")
   ];
 }
 function majorMinor(version) {
@@ -106,6 +107,7 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
   --title <title>          Display name (defaults to the name in Title Case)
   --variant <variant>      node-postgres (default) or hono-cloudflare
   --db <db>                hono-cloudflare only: hyperdrive (default) or d1
+  --ui <library>           Headless components: base-ui (default, stable) or ui-sdk (beta)
   --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
   --reason <text>          Why this variant, logged in .agent/DECISIONS.md
   --github                 Create the private GitHub repo, push, and open the Planner's issue
@@ -117,6 +119,7 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
 [dir] defaults to ./<name>. Anything not given is asked for, unless --yes is set or
 nobody is at a terminal (a bot, CI). The last lines printed are PROJECT_DIR=,
 PROJECT_REPO= and PROJECT_ISSUE=.`;
+var UIS = ["base-ui", "ui-sdk"];
 var NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 function titleFromName(name) {
   return name.replace(/(^|-)([a-z0-9])/g, (_, dash, c) => (dash ? " " : "") + c.toUpperCase());
@@ -133,8 +136,13 @@ function validate(o) {
     o.db ??= "hyperdrive";
     if (o.db !== "hyperdrive" && o.db !== "d1") fail("--db must be hyperdrive or d1");
   }
+  o.ui ??= UIS[0];
+  if (!UIS.includes(o.ui)) fail(`--ui must be ${UIS.join(" or ")}`);
   if (o.brief !== void 0 && !o.brief.trim()) fail("the brief is empty");
   return o;
+}
+function describe(o) {
+  return `${o.db ? `${o.variant} with ${o.db}` : o.variant}, ${o.ui}`;
 }
 function readBrief(path) {
   try {
@@ -152,6 +160,7 @@ async function getOptions(argv) {
       title: { type: "string" },
       variant: { type: "string" },
       db: { type: "string" },
+      ui: { type: "string" },
       "brief-file": { type: "string" },
       reason: { type: "string" },
       github: { type: "boolean", default: false },
@@ -173,6 +182,7 @@ async function getOptions(argv) {
   let title = values.title;
   let variant = values.variant;
   let db = values.db;
+  let ui = values.ui;
   let brief = briefFile ? readBrief(briefFile) : void 0;
   let github = values.github;
   if (interactive) {
@@ -183,6 +193,7 @@ async function getOptions(argv) {
       title ??= await ask("Display name:", titleFromName(name));
       variant ??= await ask("Variant, node-postgres or hono-cloudflare:", "node-postgres");
       if (variant === "hono-cloudflare") db ??= await ask("Database, hyperdrive or d1:", "hyperdrive");
+      ui ??= await ask("Components, base-ui (stable) or ui-sdk (beta):", UIS[0]);
       dirArg ??= await ask("Folder:", `./${name}`);
       if (!briefFile) {
         const path = await ask("Path to the owner's brief (blank to add it later):");
@@ -201,6 +212,7 @@ async function getOptions(argv) {
     title: title || titleFromName(name),
     variant: variant ?? "node-postgres",
     db,
+    ui: ui || void 0,
     brief,
     reason: values.reason,
     github,
@@ -223,10 +235,38 @@ import {
 } from "node:fs";
 import { basename as basename2, join as join3, relative, sep } from "node:path";
 var SKIP = /* @__PURE__ */ new Set(["node_modules", ".turbo", "dist"]);
+function addComponentLibrary(o) {
+  const ui = JSON.parse(
+    readFileSync4(join3(KIT_DIR, "templates/ui", o.ui ?? "", "ui.json"), "utf8")
+  );
+  const webPath = join3(o.dir, "apps/web/package.json");
+  const web = JSON.parse(readFileSync4(webPath, "utf8"));
+  for (const name of Object.keys(ui.catalog)) web.dependencies[name] = "catalog:";
+  web.dependencies = Object.fromEntries(Object.entries(web.dependencies).sort(([a], [b]) => a.localeCompare(b)));
+  writeFileSync(webPath, `${JSON.stringify(web, null, 2)}
+`);
+  const workspacePath = join3(o.dir, "pnpm-workspace.yaml");
+  const pins = Object.entries(ui.catalog).map(([name, version]) => `  '${name}': ${version}`);
+  const workspace = readFileSync4(workspacePath, "utf8").replace(
+    /^ {2}# component library: .*$/m,
+    [`  # component library: ${o.ui}`, ...pins].join("\n")
+  );
+  writeFileSync(workspacePath, workspace);
+  if (ui.renovate.length) {
+    const renovatePath = join3(o.dir, "renovate.json");
+    const renovate = JSON.parse(readFileSync4(renovatePath, "utf8"));
+    renovate.packageRules.push(...ui.renovate);
+    writeFileSync(renovatePath, `${JSON.stringify(renovate, null, 2)}
+`);
+  }
+}
 function copyTemplates(o) {
   mkdirSync(o.dir, { recursive: true });
   for (const layer of layers(o)) {
-    cpSync(layer, o.dir, { recursive: true, filter: (src) => !SKIP.has(basename2(src)) });
+    cpSync(layer, o.dir, {
+      recursive: true,
+      filter: (src) => !SKIP.has(basename2(src)) && src !== join3(layer, "ui.json")
+    });
   }
   const entries = readdirSync2(o.dir, { recursive: true, withFileTypes: true }).map((entry) => ({ path: join3(entry.parentPath, entry.name), isDir: entry.isDirectory() })).filter(({ path }) => !relative(o.dir, path).startsWith(E2E_CACHE)).sort((a, b) => b.path.split(sep).length - a.path.split(sep).length);
   for (const { path, isDir } of entries) {
@@ -255,8 +295,7 @@ function recordBrief(o) {
 
 ${o.brief}`
   );
-  const variant = o.db ? `${o.variant} with ${o.db}` : o.variant;
-  appendFileSync(join3(agent, "DECISIONS.md"), `${today} \u2014 variant: ${variant} \u2014 ${o.reason ?? "the default"}
+  appendFileSync(join3(agent, "DECISIONS.md"), `${today} \u2014 stack: ${describe(o)} \u2014 ${o.reason ?? "the defaults"}
 `);
   appendFileSync(
     join3(agent, "PROGRESS.md"),
@@ -265,8 +304,9 @@ ${o.brief}`
   );
 }
 function scaffold(o) {
-  step(`Scaffolding ${o.name} (${o.variant}${o.db ? `, ${o.db}` : ""}) into ${o.dir}`);
+  step(`Scaffolding ${o.name} (${describe(o)}) into ${o.dir}`);
   copyTemplates(o);
+  addComponentLibrary(o);
   copyFileSync(join3(o.dir, ".env.example"), join3(o.dir, ".env"));
   recordBrief(o);
   const here = { cwd: o.dir };

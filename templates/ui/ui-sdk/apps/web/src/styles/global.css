@@ -1,0 +1,33 @@
+/* ui-sdk's behaviour CSS goes in this layer; declared first so every other style wins. */
+@layer ui-sdk;
+
+@import 'tailwindcss';
+/* ui-sdk's default look, above Tailwind's base styles and below its utilities. */
+@import '@ui-sdk/core/web.css' layer(components);
+/* Design tokens (Hallmark's names; the design-language skill rewrites them). */
+@import './tokens.css';
+@import './app.css';
+
+:root {
+  /* ui-sdk's web.css reads these. Point them at the token roles, never at raw values. */
+  --ui-background: var(--color-paper);
+  --ui-foreground: var(--color-ink);
+  --ui-muted: var(--color-paper-3);
+  --ui-muted-foreground: var(--color-muted);
+  --ui-border: var(--color-rule);
+  --ui-input: var(--color-control-edge);
+  --ui-primary: var(--color-primary);
+  --ui-primary-foreground: var(--color-primary-ink);
+  --ui-destructive: var(--color-error);
+  /* web.css's ring is the only focus mark on buttons, so it stays solid to clear 3:1. */
+  --ui-ring: var(--color-focus);
+  --ui-ring-border: var(--color-focus);
+  --ui-overlay: var(--color-overlay);
+  --ui-shadow: var(--shadow-pop);
+  --ui-radius: var(--radius-control);
+  --ui-font-sans: var(--font-body);
+  --ui-font-mono: var(--font-mono);
+  --ui-font-size: var(--text-sm);
+  --ui-spacing: var(--space-2xs);
+  --ui-line-height: var(--leading-normal);
+}

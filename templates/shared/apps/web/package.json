@@ -14,8 +14,6 @@
     "@kitapp/contracts": "workspace:*",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
-    "@ui-sdk/core": "catalog:",
-    "@ui-sdk/react": "catalog:",
     "ky": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

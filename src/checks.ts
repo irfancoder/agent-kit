@@ -9,6 +9,7 @@ export function layers(o: Options): string[] {
     join(KIT_DIR, 'templates/shared'),
     join(KIT_DIR, 'templates', o.variant, 'base'),
     ...(o.db ? [join(KIT_DIR, 'templates', o.variant, `db-${o.db}`)] : []),
+    join(KIT_DIR, 'templates/ui', o.ui ?? ''),
   ];
 }
 

@@ -13,6 +13,7 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
   --title <title>          Display name (defaults to the name in Title Case)
   --variant <variant>      node-postgres (default) or hono-cloudflare
   --db <db>                hono-cloudflare only: hyperdrive (default) or d1
+  --ui <library>           Headless components: base-ui (default, stable) or ui-sdk (beta)
   --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
   --reason <text>          Why this variant, logged in .agent/DECISIONS.md
   --github                 Create the private GitHub repo, push, and open the Planner's issue
@@ -27,6 +28,9 @@ PROJECT_REPO= and PROJECT_ISSUE=.`;
 
 export type Variant = 'node-postgres' | 'hono-cloudflare';
 export type Db = 'hyperdrive' | 'd1';
+/** Headless component libraries, one per templates/ui/<name>. The first is the default. */
+export const UIS = ['base-ui', 'ui-sdk'] as const;
+export type Ui = (typeof UIS)[number];
 
 export interface Options {
   dir: string;
@@ -34,6 +38,7 @@ export interface Options {
   title: string;
   variant: Variant;
   db?: Db;
+  ui?: Ui;
   brief?: string;
   reason?: string;
   github: boolean;
@@ -47,7 +52,7 @@ function titleFromName(name: string): string {
   return name.replace(/(^|-)([a-z0-9])/g, (_, dash: string, c: string) => (dash ? ' ' : '') + c.toUpperCase());
 }
 
-function validate(o: Options): Options {
+function validate(o: Options): Options & { ui: Ui } {
   if (!NAME.test(o.name)) fail('--name must be kebab-case (for example budget-tracker)');
   if (o.name === 'kitapp') fail("--name can't be the template placeholder 'kitapp'");
   if (o.name.length > 50) fail('--name must be 50 characters or fewer');
@@ -60,8 +65,15 @@ function validate(o: Options): Options {
     o.db ??= 'hyperdrive';
     if (o.db !== 'hyperdrive' && o.db !== 'd1') fail('--db must be hyperdrive or d1');
   }
+  o.ui ??= UIS[0];
+  if (!UIS.includes(o.ui)) fail(`--ui must be ${UIS.join(' or ')}`);
   if (o.brief !== undefined && !o.brief.trim()) fail('the brief is empty');
-  return o;
+  return o as Options & { ui: Ui };
+}
+
+/** "node-postgres, base-ui" or "hono-cloudflare with d1, ui-sdk" */
+export function describe(o: Options): string {
+  return `${o.db ? `${o.variant} with ${o.db}` : o.variant}, ${o.ui}`;
 }
 
 function readBrief(path: string): string {
@@ -73,7 +85,7 @@ function readBrief(path: string): string {
 }
 
 /** Parses the command line, then asks for whatever is missing when someone is at a terminal. */
-export async function getOptions(argv: string[]): Promise<Options | null> {
+export async function getOptions(argv: string[]): Promise<(Options & { ui: Ui }) | null> {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
@@ -82,6 +94,7 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
       title: { type: 'string' },
       variant: { type: 'string' },
       db: { type: 'string' },
+      ui: { type: 'string' },
       'brief-file': { type: 'string' },
       reason: { type: 'string' },
       github: { type: 'boolean', default: false },
@@ -104,6 +117,7 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
   let title = values.title;
   let variant = values.variant;
   let db = values.db;
+  let ui = values.ui;
   let brief = briefFile ? readBrief(briefFile) : undefined;
   let github = values.github;
 
@@ -116,6 +130,7 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
       title ??= await ask('Display name:', titleFromName(name));
       variant ??= (await ask('Variant, node-postgres or hono-cloudflare:', 'node-postgres'));
       if (variant === 'hono-cloudflare') db ??= await ask('Database, hyperdrive or d1:', 'hyperdrive');
+      ui ??= await ask('Components, base-ui (stable) or ui-sdk (beta):', UIS[0]);
       dirArg ??= await ask('Folder:', `./${name}`);
       if (!briefFile) {
         const path = await ask("Path to the owner's brief (blank to add it later):");
@@ -135,6 +150,7 @@ export async function getOptions(argv: string[]): Promise<Options | null> {
     title: title || titleFromName(name),
     variant: (variant ?? 'node-postgres') as Variant,
     db: db as Db | undefined,
+    ui: (ui || undefined) as Ui | undefined,
     brief,
     reason: values.reason,
     github,
