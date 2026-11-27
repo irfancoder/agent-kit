@@ -6,6 +6,7 @@
 #   scripts/install-hallmark.sh              # install the pinned version
 #   HALLMARK_REF=<sha> scripts/install-hallmark.sh   # try another version
 #   HALLMARK_DEST="dir1/hallmark dir2/hallmark" ...   # install somewhere else
+#   scripts/install-hallmark.sh --check      # exit 1 if it isn't installed at the pin
 #
 # Safe to rerun: it does nothing when every destination already has the pinned version.
 # Bump HALLMARK_PIN on purpose (read the changelog, rerun selftest), like any dependency.
@@ -22,6 +23,7 @@ current=1
 for dest in "${DESTS[@]}"; do
   [[ "$(cat "$dest/.hallmark-ref" 2>/dev/null)" == "$REF" ]] || current=0
 done
+if [[ "${1:-}" == --check ]]; then exit $((1 - current)); fi
 if [[ $current == 1 ]]; then echo "Hallmark $REF is already installed."; exit 0; fi
 
 WORK="$(mktemp -d)"

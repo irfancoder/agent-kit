@@ -12,6 +12,8 @@ copy or link to any MOF code or assets.
 
 - [Before you start](#before-you-start)
 - [Start a project](#start-a-project)
+  - [With a bot: the kickstart skill](#with-a-bot-the-kickstart-skill)
+  - [By hand](#by-hand)
 - [Run it](#run-it)
 - [A project's life with an agent team](#a-projects-life-with-an-agent-team)
 - [Everyday commands](#everyday-commands)
@@ -39,14 +41,62 @@ Then get agent-kit itself. It's a private repo:
 gh repo clone irfancoder/agent-kit ~/agent-kit
 ```
 
-If projects will get a design language (most will), install the Hallmark design skill once
-per machine, at the version agent-kit pins:
+Then install agent-kit's skills for your agents, once per machine:
 
 ```bash
-~/agent-kit/scripts/install-hallmark.sh
+~/agent-kit/scripts/install-skills.sh
 ```
 
+It links the **kickstart** skill (which starts projects; see below) into
+`~/.claude/skills` and `~/.agents/skills`, and installs the Hallmark design skill at the
+version agent-kit pins. Rerun it any time; it only changes what's out of date. Sign
+Claude Code in too (run `claude`): agents record e2e steps on your Claude Max plan.
+
 ## Start a project
+
+### With a bot: the kickstart skill
+
+Give the Lead bot (or any Claude Code session on the machine) your brief and ask it to
+kick off the project:
+
+> Kickstart a project from this brief: A simple stock tracker for my sister's kedai
+> runcit. She adds items as they come in and sees what's left at a glance, on her phone,
+> in Bahasa Melayu.
+
+The bot:
+1. picks a name, a title and a variant from the brief, and only asks you if the brief
+   contradicts itself;
+2. runs `scripts/kickstart.sh`, which:
+   - checks the machine;
+   - scaffolds into `~/projects/<name>`;
+   - saves your brief word for word in `.agent/BRIEF.md`;
+   - creates the private repo `github.com/<you>/<name>` and pushes;
+   - opens a `ready` issue, **Plan the project from the brief**, for the Planner;
+3. reports back the repo and issue links, its choices and any warnings.
+
+From there the team takes over (see
+[A project's life with an agent team](#a-projects-life-with-an-agent-team)).
+
+`kickstart.sh` works without a bot too:
+
+```bash
+~/agent-kit/scripts/kickstart.sh --name kedai-stock --title "Kedai Stock" --brief-file brief.md
+```
+
+It takes `--variant` and `--db` like the scaffold, plus:
+- `--reason` (logged in `.agent/DECISIONS.md`);
+- `--dir` (default `~/projects/<name>`);
+- `--owner` (default: your `gh` user);
+- `--no-remote`, which stops before GitHub.
+
+It stops before creating anything if the machine isn't ready:
+- Node, pnpm or Docker is missing;
+- `gh` isn't signed in;
+- the repo name is taken;
+- agent-kit's e2e cache isn't recorded yet, because the first push would fail
+  ([irfancoder/agent-kit#1](https://github.com/irfancoder/agent-kit/issues/1)).
+
+### By hand
 
 ```bash
 ~/agent-kit/scaffold.sh ~/projects/budget-tracker --name budget-tracker --title "Budget Tracker"
@@ -68,7 +118,9 @@ The command:
 5. makes one commit, `chore: scaffold via agent-kit <version>`, on `main`.
 
 That commit goes through the project's own pre-commit hook, so a fresh project always
-starts green. Nothing is pushed: add a remote yourself when you're ready, for example:
+starts green. Add `--brief-file brief.md` (and `--reason`) to put the owner's brief in
+`.agent/BRIEF.md` in that same commit; `--check` only checks the options and the machine.
+Nothing is pushed. Add a remote when you're ready, for example:
 
 ```bash
 cd ~/projects/budget-tracker
@@ -258,7 +310,8 @@ The kit itself:
 | `templates/node-postgres/base/` | The Fastify api, docker-compose, e2e serve script |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
 | `scripts/record-e2e-cache.sh` | Records the e2e replay cache that ships in the template |
-| `scripts/install-hallmark.sh` | Installs the Hallmark design skill at a pinned commit |
+| `scripts/kickstart.sh`, `skills/kickstart/` | Starts a project from a brief, and the skill that drives it |
+| `scripts/install-skills.sh` | Links the kickstart skill and installs Hallmark (`scripts/install-hallmark.sh`, pinned) |
 | `FINDINGS.md` | Research behind the tool choices |
 
 To change the template:
@@ -269,8 +322,8 @@ To change the template:
    `./scripts/record-e2e-cache.sh` (signed in with `claude`), and commit
    `templates/shared/packages/e2e/.e2e/cache`.
 3. Run `./selftest.sh`, or `./selftest.sh node-postgres` for one variant. It scaffolds
-   each variant, runs both hooks with Claude Code signed out, and fails on any leftover
-   placeholder. It must pass before an update is merged. `KEEP=1` keeps the scaffolded
+   each variant, runs both hooks with Claude Code signed out, fails on any leftover
+   placeholder. The node-postgres pass goes through `kickstart.sh --no-remote`. It must pass before an update is merged. `KEEP=1` keeps the scaffolded
    projects so you can look at them.
 4. Bump `VERSION`.
 

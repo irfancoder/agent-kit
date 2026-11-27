@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Scaffolds every variant into a temp dir, runs both git hooks in each, and checks
-# that no placeholder token is left. Exits non-zero on any failure.
+# Scaffolds every variant into a temp dir (node-postgres through kickstart.sh), runs
+# both git hooks in each, and checks that no placeholder token is left. Exits non-zero
+# on any failure.
 #
 #   ./selftest.sh                       # all variants
 #   ./selftest.sh node-postgres         # one variant (hono-cloudflare:d1 picks a db)
@@ -36,9 +37,20 @@ for spec in "${VARIANTS[@]}"; do
   name="selftest-${variant}${db:+-$db}"
   dir="$WORK/$name"
   PROJECTS+=("$dir")
-  echo "==> $spec: scaffold"
-  if ! "$KIT_DIR/scaffold.sh" "$dir" --name "$name" --variant "$variant" ${db:+--db "$db"} >"$WORK/$name.log" 2>&1; then
+  # node-postgres goes through kickstart (local, no GitHub), which wraps the scaffold.
+  if [[ "$variant" == node-postgres ]]; then
+    echo "==> $spec: kickstart --no-remote"
+    printf 'A brief, word for word.\n' > "$WORK/brief.txt"
+    make=("$KIT_DIR/scripts/kickstart.sh" --name "$name" --brief-file "$WORK/brief.txt" --dir "$dir" --no-remote)
+  else
+    echo "==> $spec: scaffold"
+    make=("$KIT_DIR/scaffold.sh" "$dir" --name "$name" --variant "$variant" ${db:+--db "$db"})
+  fi
+  if ! "${make[@]}" >"$WORK/$name.log" 2>&1; then
     echo "    FAIL: scaffold (log: $WORK/$name.log)"; tail -20 "$WORK/$name.log"; FAILED+=("$spec:scaffold"); continue
+  fi
+  if [[ "$variant" == node-postgres ]] && ! grep -q 'A brief, word for word.' "$dir/.agent/BRIEF.md"; then
+    echo "    FAIL: kickstart didn't record the brief"; FAILED+=("$spec:brief")
   fi
   # Avoid clashing with anything already listening on the default ports.
   if grep -q '^POSTGRES_PORT=' "$dir/.env" 2>/dev/null; then

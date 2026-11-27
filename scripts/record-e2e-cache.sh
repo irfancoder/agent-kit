@@ -7,7 +7,7 @@
 # and sign in first. Run it again after changing the example UI or tests.
 set -euo pipefail
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-if ! claude auth status 2>/dev/null | grep -q '"loggedIn": true'; then
+if ! claude auth status 2>/dev/null | grep -Eq '"loggedIn": *true'; then
   echo "record-e2e-cache: Claude Code isn't signed in. Run \`claude\` and sign in with your Max account." >&2
   exit 1
 fi
