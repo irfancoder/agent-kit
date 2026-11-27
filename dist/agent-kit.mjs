@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 
 // src/checks.ts
-import { existsSync, readdirSync, readFileSync as readFileSync2 } from "node:fs";
+import { existsSync, readdirSync, readFileSync as readFileSync3 } from "node:fs";
 import { join as join2 } from "node:path";
+
+// src/options.ts
+import { readFileSync as readFileSync2 } from "node:fs";
+import { homedir } from "node:os";
+import { basename, resolve } from "node:path";
+import { createInterface } from "node:readline/promises";
+import { parseArgs } from "node:util";
 
 // src/util.ts
 import { spawnSync } from "node:child_process";
@@ -33,72 +40,7 @@ function output(cmd, args) {
   return result.status === 0 ? String(result.stdout).trim() : null;
 }
 
-// src/checks.ts
-function layers(o) {
-  return [
-    join2(KIT_DIR, "templates/shared"),
-    join2(KIT_DIR, "templates", o.variant, "base"),
-    ...o.db ? [join2(KIT_DIR, "templates", o.variant, `db-${o.db}`)] : [],
-    join2(KIT_DIR, "templates/ui", o.ui ?? "")
-  ];
-}
-function majorMinor(version) {
-  const [, major = "0", minor = "0"] = /(\d+)(?:\.(\d+))?/.exec(version) ?? [];
-  return [Number(major), Number(minor)];
-}
-function checkMachine(o) {
-  if (existsSync(o.dir)) fail(`${o.dir} already exists`);
-  if (output("git", ["--version"]) === null) fail("git is not installed");
-  const pkg = JSON.parse(readFileSync2(join2(KIT_DIR, "templates/shared/package.json"), "utf8"));
-  const [needMajor, needMinor] = majorMinor(pkg.engines.node);
-  const [major, minor] = majorMinor(process.versions.node);
-  if (major < needMajor || major === needMajor && minor < needMinor)
-    fail(`Node.js ${pkg.engines.node} is needed (found ${process.version})`);
-  const pnpm = output("pnpm", ["--version"]) ?? fail("pnpm is not installed");
-  const [pnpmMajor] = majorMinor(pkg.packageManager);
-  if (majorMinor(pnpm)[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
-  if (layers(o).some((layer) => existsSync(join2(layer, "docker-compose.yml"))) && output("docker", ["info"]) === null)
-    fail("Docker isn't running (the project's database needs it)");
-  if (o.github) {
-    o.owner ??= output("gh", ["api", "user", "-q", ".login"]) ?? fail("gh isn't installed or signed in (gh auth login)");
-    if (output("gh", ["repo", "view", `${o.owner}/${o.name}`]) !== null) fail(`github.com/${o.owner}/${o.name} already exists`);
-    if (!readdirSync(join2(KIT_DIR, "templates/shared", E2E_CACHE)).some((f) => f.endsWith(".json")))
-      fail("agent-kit's e2e replay cache isn't recorded yet, so the first push would fail (irfancoder/agent-kit#1)");
-  }
-  if (!/"loggedIn":\s*true/.test(output("claude", ["auth", "status"]) ?? ""))
-    warn("Claude Code isn't signed in; the Builder can't record e2e steps until you run `claude` and sign in");
-}
-
-// src/github.ts
-var PLAN_ISSUE = `Read \`AGENTS.md\`, then plan the project from \`.agent/BRIEF.md\`: \`GOAL.md\`, \`SPEC.md\` and \`feature_list.json\`.
-
-Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first (its steps: \`.claude/skills/design-language/SKILL.md\`), then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
-function publish(o) {
-  const here = { cwd: o.dir };
-  step("Installing the e2e browser for the pre-push hook (cached per machine)");
-  run("pnpm", ["--dir", "packages/e2e", "exec", "e2e-web", "install", "chromium"], { ...here, stdio: ["ignore", "ignore", "inherit"] });
-  const slug = `${o.owner}/${o.name}`;
-  step(`Creating github.com/${slug}`);
-  run("gh", ["repo", "create", slug, "--private", "--source", ".", "--remote", "origin", "--push"], here);
-  for (const [label, color, description] of [
-    ["ready", "0e8a16", "Can be picked up now"],
-    ["needs-decision", "d93f0b", "Waiting on the owner"]
-  ]) {
-    run("gh", ["label", "create", label, "--repo", slug, "--color", color, "--description", description, "--force"], {
-      stdio: "ignore"
-    });
-  }
-  const repo = `https://github.com/${slug}`;
-  const issue = output("gh", ["issue", "create", "--repo", slug, "--label", "ready", "--title", "Plan the project from the brief", "--body", PLAN_ISSUE]) ?? fail(`the repo was created (${repo}) but the Planner's issue wasn't`);
-  return { repo, issue };
-}
-
 // src/options.ts
-import { readFileSync as readFileSync3 } from "node:fs";
-import { homedir } from "node:os";
-import { basename, resolve } from "node:path";
-import { createInterface } from "node:readline/promises";
-import { parseArgs } from "node:util";
 var USAGE = `agent-kit [dir] [options]
 
 Creates a project in IRFANCODER's stack, ready for an agent team.
@@ -141,12 +83,16 @@ function validate(o) {
   if (o.brief !== void 0 && !o.brief.trim()) fail("the brief is empty");
   return o;
 }
+function dbEnvVar(o) {
+  if (o.variant === "node-postgres") return "DATABASE_URL";
+  return o.db === "hyperdrive" ? "CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE" : null;
+}
 function describe(o) {
   return `${o.db ? `${o.variant} with ${o.db}` : o.variant}, ${o.ui}`;
 }
 function readBrief(path) {
   try {
-    return readFileSync3(path === "-" ? 0 : path, "utf8");
+    return readFileSync2(path === "-" ? 0 : path, "utf8");
   } catch {
     return fail(`can't read the brief from ${path === "-" ? "stdin" : path}`);
   }
@@ -221,11 +167,72 @@ async function getOptions(argv) {
   });
 }
 
+// src/checks.ts
+function layers(o) {
+  return [
+    join2(KIT_DIR, "templates/shared"),
+    join2(KIT_DIR, "templates", o.variant, "base"),
+    ...o.db ? [join2(KIT_DIR, "templates", o.variant, `db-${o.db}`)] : [],
+    join2(KIT_DIR, "templates/ui", o.ui ?? "")
+  ];
+}
+function majorMinor(version) {
+  const [, major = "0", minor = "0"] = /(\d+)(?:\.(\d+))?/.exec(version) ?? [];
+  return [Number(major), Number(minor)];
+}
+function checkMachine(o) {
+  if (existsSync(o.dir)) fail(`${o.dir} already exists`);
+  if (output("git", ["--version"]) === null) fail("git is not installed");
+  const pkg = JSON.parse(readFileSync3(join2(KIT_DIR, "templates/shared/package.json"), "utf8"));
+  const [needMajor, needMinor] = majorMinor(pkg.engines.node);
+  const [major, minor] = majorMinor(process.versions.node);
+  if (major < needMajor || major === needMajor && minor < needMinor)
+    fail(`Node.js ${pkg.engines.node} is needed (found ${process.version})`);
+  const pnpm = output("pnpm", ["--version"]) ?? fail("pnpm is not installed");
+  const [pnpmMajor] = majorMinor(pkg.packageManager);
+  if (majorMinor(pnpm)[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
+  if (dbEnvVar(o) && !process.env.DATABASE_URL) {
+    if (o.github) fail("set DATABASE_URL to a Postgres you provide (the first push runs e2e against it)");
+    warn("DATABASE_URL isn't set; point the database URL in the project's .env at a Postgres you provide");
+  }
+  if (o.github) {
+    o.owner ??= output("gh", ["api", "user", "-q", ".login"]) ?? fail("gh isn't installed or signed in (gh auth login)");
+    if (output("gh", ["repo", "view", `${o.owner}/${o.name}`]) !== null) fail(`github.com/${o.owner}/${o.name} already exists`);
+    if (!readdirSync(join2(KIT_DIR, "templates/shared", E2E_CACHE)).some((f) => f.endsWith(".json")))
+      fail("agent-kit's e2e replay cache isn't recorded yet, so the first push would fail (irfancoder/agent-kit#1)");
+  }
+  if (!/"loggedIn":\s*true/.test(output("claude", ["auth", "status"]) ?? ""))
+    warn("Claude Code isn't signed in; the Builder can't record e2e steps until you run `claude` and sign in");
+}
+
+// src/github.ts
+var PLAN_ISSUE = `Read \`AGENTS.md\`, then plan the project from \`.agent/BRIEF.md\`: \`GOAL.md\`, \`SPEC.md\` and \`feature_list.json\`.
+
+Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first (its steps: \`.claude/skills/design-language/SKILL.md\`), then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
+function publish(o) {
+  const here = { cwd: o.dir };
+  step("Installing the e2e browser for the pre-push hook (cached per machine)");
+  run("pnpm", ["--dir", "packages/e2e", "exec", "e2e-web", "install", "chromium"], { ...here, stdio: ["ignore", "ignore", "inherit"] });
+  const slug = `${o.owner}/${o.name}`;
+  step(`Creating github.com/${slug}`);
+  run("gh", ["repo", "create", slug, "--private", "--source", ".", "--remote", "origin", "--push"], here);
+  for (const [label, color, description] of [
+    ["ready", "0e8a16", "Can be picked up now"],
+    ["needs-decision", "d93f0b", "Waiting on the owner"]
+  ]) {
+    run("gh", ["label", "create", label, "--repo", slug, "--color", color, "--description", description, "--force"], {
+      stdio: "ignore"
+    });
+  }
+  const repo = `https://github.com/${slug}`;
+  const issue = output("gh", ["issue", "create", "--repo", slug, "--label", "ready", "--title", "Plan the project from the brief", "--body", PLAN_ISSUE]) ?? fail(`the repo was created (${repo}) but the Planner's issue wasn't`);
+  return { repo, issue };
+}
+
 // src/scaffold.ts
 import {
   appendFileSync,
   chmodSync,
-  copyFileSync,
   cpSync,
   mkdirSync,
   readdirSync as readdirSync2,
@@ -303,11 +310,18 @@ ${o.brief}`
 `
   );
 }
+function writeEnv(o) {
+  const url = process.env.DATABASE_URL;
+  const key = dbEnvVar(o);
+  let env = readFileSync4(join3(o.dir, ".env.example"), "utf8");
+  if (url && key) env = env.replace(new RegExp(`^${key}=.*$`, "m"), () => `${key}=${url}`);
+  writeFileSync(join3(o.dir, ".env"), env);
+}
 function scaffold(o) {
   step(`Scaffolding ${o.name} (${describe(o)}) into ${o.dir}`);
   copyTemplates(o);
   addComponentLibrary(o);
-  copyFileSync(join3(o.dir, ".env.example"), join3(o.dir, ".env"));
+  writeEnv(o);
   recordBrief(o);
   const here = { cwd: o.dir };
   run("git", ["init", "-q", "-b", "main"], here);

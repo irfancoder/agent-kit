@@ -7,11 +7,12 @@
 //                                      database, node-postgres+ui-sdk a component library
 //   KEEP=1 pnpm test                   keep the projects to look at
 //
-// Needs Docker running and the e2e browser (pnpm --dir <project>/packages/e2e exec
-// e2e-web install chromium).
+// Needs the e2e browser (pnpm --dir <project>/packages/e2e exec e2e-web install
+// chromium) and, for the Postgres variants, DATABASE_URL set to a Postgres you run
+// (for example postgres://localhost/agentkit). Its role needs CREATEDB for the e2e
+// database.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { UIS } from '../src/options.ts';
@@ -20,9 +21,13 @@ import { E2E_CACHE, KIT_DIR } from '../src/util.ts';
 const variants = process.argv.slice(2).length
   ? process.argv.slice(2)
   : ['node-postgres', 'hono-cloudflare:hyperdrive+ui-sdk', 'hono-cloudflare:d1'];
+// Every variant but D1 uses Postgres.
+if (!process.env.DATABASE_URL && variants.some((spec) => !spec.includes(':d1'))) {
+  console.log('selftest: set DATABASE_URL to a Postgres you run (see the top of test/selftest.ts)');
+  process.exit(1);
+}
 const work = mkdtempSync(join(tmpdir(), 'agent-kit-selftest-'));
 const failed: string[] = [];
-const projects: string[] = [];
 
 // Hooks must pass with no agent: an empty Claude Code config has no login, so a step
 // that isn't recorded fails instead of spending the plan's usage.
@@ -42,15 +47,6 @@ function fail(what: string, log?: string): void {
   console.log(`    FAIL: ${what}${log ? ` (log: ${log})` : ''}`);
   if (log) console.log(readFileSync(log, 'utf8').split('\n').slice(-30).join('\n'));
   failed.push(what);
-}
-
-function freePort(): Promise<number> {
-  return new Promise((done) => {
-    const server = createServer().listen(0, '127.0.0.1', () => {
-      const { port } = server.address() as { port: number };
-      server.close(() => done(port));
-    });
-  });
 }
 
 /** Files and folders that still carry one of the needles (the placeholders by default), outside the e2e cache. */
@@ -85,7 +81,6 @@ try {
     const [variant, db] = layers.split(':');
     const name = `selftest-${variant}${db ? `-${db}` : ''}${ui ? `-${ui}` : ''}`;
     const dir = join(work, name);
-    projects.push(dir);
 
     console.log(`==> ${spec}: scaffold`);
     // node-postgres also gets a brief, as a bot passes it (stdin).
@@ -109,14 +104,6 @@ try {
       if (leaked) fail(`${spec}:${other} leaked into a ${chosen} project`);
     }
 
-    // Avoid clashing with anything already listening on the default Postgres port.
-    const envFile = join(dir, '.env');
-    const dotenv = readFileSync(envFile, 'utf8');
-    if (/^POSTGRES_PORT=/m.test(dotenv)) {
-      const port = await freePort();
-      writeFileSync(envFile, dotenv.replace(/^POSTGRES_PORT=.*/m, `POSTGRES_PORT=${port}`).replace(/127\.0\.0\.1:\d+\//, `127.0.0.1:${port}/`));
-    }
-
     console.log(`==> ${spec}: leftover placeholders`);
     const left = leftovers(dir);
     if (left.length) fail(`${spec}:placeholders in ${left.map((p) => relative(dir, p)).join(', ')}`);
@@ -127,9 +114,6 @@ try {
     if (!sh('pnpm', ['exec', 'lefthook', 'run', 'pre-push', '--all-files'], dir, hookLog)) fail(`${spec}:pre-push`, hookLog);
   }
 } finally {
-  for (const dir of projects) {
-    if (existsSync(join(dir, 'docker-compose.yml'))) spawnSync('docker', ['compose', 'down', '-v'], { cwd: dir, stdio: 'ignore' });
-  }
   if (failed.length || process.env.KEEP === '1') console.log(`Kept ${work}`);
   else rmSync(work, { recursive: true, force: true });
 }

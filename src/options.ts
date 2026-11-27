@@ -71,6 +71,15 @@ function validate(o: Options): Options & { ui: Ui } {
   return o as Options & { ui: Ui };
 }
 
+/**
+ * The .env key that holds the URL of the Postgres the user provides (the kit never
+ * starts one), or null for D1. Wrangler names Hyperdrive's after its binding.
+ */
+export function dbEnvVar(o: Options): string | null {
+  if (o.variant === 'node-postgres') return 'DATABASE_URL';
+  return o.db === 'hyperdrive' ? 'CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE' : null;
+}
+
 /** "node-postgres, base-ui" or "hono-cloudflare with d1, ui-sdk" */
 export function describe(o: Options): string {
   return `${o.db ? `${o.variant} with ${o.db}` : o.variant}, ${o.ui}`;

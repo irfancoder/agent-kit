@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Options } from './options.ts';
+import { dbEnvVar, type Options } from './options.ts';
 import { E2E_CACHE, fail, KIT_DIR, output, warn } from './util.ts';
 
 /** Paths of the template layers for these options, in copy order. */
@@ -34,9 +34,11 @@ export function checkMachine(o: Options): void {
   const [pnpmMajor] = majorMinor(pkg.packageManager);
   if (majorMinor(pnpm)[0] !== pnpmMajor) fail(`pnpm ${pnpmMajor} is needed (found ${pnpm})`);
 
-  // Variants with a local database run it in Docker.
-  if (layers(o).some((layer) => existsSync(join(layer, 'docker-compose.yml'))) && output('docker', ['info']) === null)
-    fail("Docker isn't running (the project's database needs it)");
+  if (dbEnvVar(o) && !process.env.DATABASE_URL) {
+    // The first push runs e2e, which needs the database.
+    if (o.github) fail('set DATABASE_URL to a Postgres you provide (the first push runs e2e against it)');
+    warn("DATABASE_URL isn't set; point the database URL in the project's .env at a Postgres you provide");
+  }
 
   if (o.github) {
     o.owner ??= output('gh', ['api', 'user', '-q', '.login']) ?? fail("gh isn't installed or signed in (gh auth login)");

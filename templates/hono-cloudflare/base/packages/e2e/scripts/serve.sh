@@ -15,14 +15,11 @@ API_PORT="$(free_port)"
 WRANGLER_ARGS=(--ip 127.0.0.1 --port "$API_PORT" --inspector-port "$(free_port)")
 STATE="$(mktemp -d)"
 
-if [[ -f docker-compose.yml ]]; then
-  # Hyperdrive: a fresh Postgres database for this run.
-  E2E_DB="kitapp_e2e"
-  docker compose up -d --wait postgres >&2
-  docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U kitapp -d kitapp -q \
-    -c "DROP DATABASE IF EXISTS \"$E2E_DB\" WITH (FORCE)" \
-    -c "CREATE DATABASE \"$E2E_DB\"" >&2
-  export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="postgres://kitapp:kitapp@127.0.0.1:${POSTGRES_PORT:-5432}/$E2E_DB"
+if [[ -f apps/api/scripts/e2e-db.ts ]]; then
+  # Hyperdrive: a fresh database for this run, on the Postgres you provide.
+  CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE="$(node apps/api/scripts/e2e-db.ts \
+    "${CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE:?serve.sh: set it in .env to a Postgres you provide}")"
+  export CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE
 else
   # D1: a fresh local database in a temp state dir.
   (cd apps/api && D1_PERSIST_TO="$STATE" node scripts/db-setup.ts) >&2
