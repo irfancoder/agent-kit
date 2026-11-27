@@ -1,0 +1,23 @@
+{
+  "name": "@kitapp/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./openapi": "./src/openapi.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "rstest run"
+  },
+  "dependencies": {
+    "@valibot/to-json-schema": "catalog:",
+    "valibot": "catalog:"
+  },
+  "devDependencies": {
+    "@kitapp/tsconfig": "workspace:*",
+    "@rstest/core": "catalog:",
+    "typescript": "catalog:"
+  }
+}

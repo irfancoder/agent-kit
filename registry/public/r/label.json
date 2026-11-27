@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "label",
+  "title": "Label",
+  "description": "A form label.",
+  "registryDependencies": [
+    "@irfancoder/theme"
+  ],
+  "files": [
+    {
+      "path": "items/ui/label.tsx",
+      "content": "import * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { sx, type Style } from '@/lib/cx';\nimport { colors, fonts, text } from '@/styles/tokens.stylex';\n\nexport type LabelProps = Omit<ComponentProps<'label'>, 'className' | 'style'> & {\n  xstyle?: Style;\n};\n\n/** A plain form label. Inside a <Field>, use FieldLabel, which links itself to the control. */\nexport function Label({ xstyle, ...props }: LabelProps) {\n  // oxlint-disable-next-line jsx-a11y/label-has-associated-control -- callers pass htmlFor or wrap the control\n  return <label data-slot=\"label\" {...sx(labelStyles.label, xstyle)} {...props} />;\n}\n\nexport const labelStyles = stylex.create({\n  label: {\n    display: 'inline-flex',\n    alignItems: 'center',\n    gap: '0.5rem',\n    fontFamily: fonts.sans,\n    fontSize: text.sm,\n    fontWeight: text.weightMedium,\n    lineHeight: text.lineTight,\n    color: colors.foreground,\n    userSelect: 'none',\n  },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/label.tsx"
+    },
+    {
+      "path": "items/tests/label.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Label } from '@/components/ui/label';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Label', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => <Label htmlFor=\"x\">Email</Label>,\n      async () => {\n        expect(screen.getByText('Email').tagName).toBe('LABEL');\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/label.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

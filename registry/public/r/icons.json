@@ -1,0 +1,18 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "icons",
+  "title": "Inline icons",
+  "description": "Inline icons shared by other components.",
+  "registryDependencies": [
+    "@irfancoder/theme"
+  ],
+  "files": [
+    {
+      "path": "items/ui/icons.tsx",
+      "content": "import type { ComponentProps } from 'react';\n\n/* Small inline icons used by the components, so the registry needs no icon library. */\ntype IconProps = ComponentProps<'svg'>;\nconst base = {\n  width: 16,\n  height: 16,\n  viewBox: '0 0 16 16',\n  fill: 'none',\n  'aria-hidden': true,\n} as const;\n\nexport function CheckIcon(props: IconProps) {\n  return (\n    <svg {...base} {...props}>\n      <path\n        d=\"M3.5 8.5l3 3 6-7\"\n        stroke=\"currentColor\"\n        strokeWidth=\"1.75\"\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n      />\n    </svg>\n  );\n}\nexport function ChevronDownIcon(props: IconProps) {\n  return (\n    <svg {...base} {...props}>\n      <path\n        d=\"M4 6l4 4 4-4\"\n        stroke=\"currentColor\"\n        strokeWidth=\"1.5\"\n        strokeLinecap=\"round\"\n        strokeLinejoin=\"round\"\n      />\n    </svg>\n  );\n}\nexport function XIcon(props: IconProps) {\n  return (\n    <svg {...base} {...props}>\n      <path d=\"M4 4l8 8M12 4l-8 8\" stroke=\"currentColor\" strokeWidth=\"1.5\" strokeLinecap=\"round\" />\n    </svg>\n  );\n}\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/icons.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

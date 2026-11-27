@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "textarea",
+  "title": "Textarea",
+  "description": "A multi-line text input.",
+  "registryDependencies": [
+    "@irfancoder/theme",
+    "@irfancoder/control-styles"
+  ],
+  "files": [
+    {
+      "path": "items/ui/textarea.tsx",
+      "content": "import { Field } from '@base-ui/react/field';\nimport * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { cx, type Style } from '@/lib/cx';\nimport { controlStyles } from '@/components/ui/control-styles';\nimport { space } from '@/styles/tokens.stylex';\n\nexport type TextareaProps = Omit<ComponentProps<'textarea'>, 'className'> & {\n  xstyle?: Style;\n};\n\n/** A multi-line text control. Inside a <Field> it picks up the field's label and validation. */\nexport function Textarea({ xstyle, ...props }: TextareaProps) {\n  return (\n    <Field.Control\n      data-slot=\"textarea\"\n      render={<textarea {...props} />}\n      className={cx(\n        (state: { disabled?: boolean; valid?: boolean | null }) => [\n          controlStyles.base,\n          styles.textarea,\n          state.valid === false && controlStyles.invalid,\n          state.disabled && controlStyles.disabled,\n        ],\n        xstyle,\n      )}\n    />\n  );\n}\n\nconst styles = stylex.create({\n  textarea: {\n    minHeight: '4rem',\n    paddingBlock: space.sm,\n    resize: 'vertical',\n  },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/textarea.tsx"
+    },
+    {
+      "path": "items/tests/textarea.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Textarea } from '@/components/ui/textarea';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Textarea', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => <Textarea aria-label=\"Notes\" />,\n      async () => {\n        expect(screen.getByRole('textbox', { name: 'Notes' }).tagName).toBe('TEXTAREA');\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/textarea.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

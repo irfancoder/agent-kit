@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "feature_list.schema.json",
+  "title": "Feature list",
+  "description": "Created by the Planner. Only the Evaluator flips passes. Items are never deleted or reworded.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "id",
+      "category",
+      "description",
+      "steps",
+      "passes",
+      "attempts",
+      "depends_on",
+      "parallel_ok",
+      "priority",
+      "kind"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "pattern": "^F-\\d{3,}$",
+        "description": "Stable, for example F-012"
+      },
+      "category": {
+        "type": "string",
+        "minLength": 1,
+        "description": "For example auth, budget, ui"
+      },
+      "description": { "type": "string", "minLength": 1, "description": "What the user can do" },
+      "steps": {
+        "type": "array",
+        "items": { "type": "string", "minLength": 1 },
+        "minItems": 1,
+        "description": "User-level test steps. Each feature gets an e2e test."
+      },
+      "passes": { "type": "boolean", "description": "Always false at creation" },
+      "attempts": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "Failed review count, starts at 0"
+      },
+      "depends_on": {
+        "type": "array",
+        "items": { "type": "string", "pattern": "^F-\\d{3,}$" },
+        "description": "Feature ids"
+      },
+      "parallel_ok": { "type": "boolean", "description": "Safe to build alongside other work" },
+      "priority": { "type": "integer", "minimum": 1, "description": "1 = highest" },
+      "kind": { "enum": ["feature", "design-polish"] }
+    }
+  }
+}

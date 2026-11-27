@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "tabs",
+  "title": "Tabs",
+  "description": "Switch between panels of content.",
+  "registryDependencies": [
+    "@irfancoder/theme"
+  ],
+  "files": [
+    {
+      "path": "items/ui/tabs.tsx",
+      "content": "import { Tabs as BaseTabs } from '@base-ui/react/tabs';\nimport * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { cls, cx, type Override } from '@/lib/cx';\nimport { colors, fonts, motion, radii, shadows, space, text } from '@/styles/tokens.stylex';\n\nexport function Tabs({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BaseTabs.Root>, 'className'> & Override) {\n  return <BaseTabs.Root data-slot=\"tabs\" className={cls(styles.root, xstyle)} {...props} />;\n}\n\nexport function TabsList({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BaseTabs.List>, 'className'> & Override) {\n  return <BaseTabs.List data-slot=\"tabs-list\" className={cls(styles.list, xstyle)} {...props} />;\n}\n\nexport function TabsTrigger({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BaseTabs.Tab>, 'className'> & Override) {\n  return (\n    <BaseTabs.Tab\n      data-slot=\"tabs-trigger\"\n      className={cx(\n        (s: { active: boolean; disabled: boolean }) => [\n          styles.trigger,\n          s.active && styles.active,\n          s.disabled && styles.disabled,\n        ],\n        xstyle,\n      )}\n      {...props}\n    />\n  );\n}\n\nexport function TabsContent({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BaseTabs.Panel>, 'className'> & Override) {\n  return (\n    <BaseTabs.Panel data-slot=\"tabs-content\" className={cls(styles.panel, xstyle)} {...props} />\n  );\n}\n\nconst styles = stylex.create({\n  root: { display: 'flex', flexDirection: 'column', gap: space.sm, fontFamily: fonts.sans },\n  list: {\n    display: 'inline-flex',\n    alignItems: 'center',\n    width: 'fit-content',\n    padding: '3px',\n    gap: space.xxs,\n    backgroundColor: colors.muted,\n    borderRadius: radii.md,\n  },\n  trigger: {\n    display: 'inline-flex',\n    alignItems: 'center',\n    justifyContent: 'center',\n    height: space.controlSm,\n    paddingInline: space.md,\n    fontFamily: fonts.sans,\n    fontSize: text.sm,\n    fontWeight: text.weightMedium,\n    color: colors.mutedForeground,\n    backgroundColor: 'transparent',\n    borderWidth: 0,\n    borderRadius: radii.sm,\n    cursor: 'pointer',\n    transitionProperty: 'background-color, color',\n    transitionDuration: motion.fast,\n    outlineStyle: 'solid',\n    outlineWidth: { default: 0, ':focus-visible': '2px' },\n    outlineColor: colors.ring,\n  },\n  active: { color: colors.foreground, backgroundColor: colors.background, boxShadow: shadows.sm },\n  disabled: { opacity: 0.5, cursor: 'not-allowed' },\n  panel: { outline: 'none' },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/tabs.tsx"
+    },
+    {
+      "path": "items/tests/tabs.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Tabs', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => (\n        <Tabs defaultValue=\"one\">\n          <TabsList>\n            <TabsTrigger value=\"one\">One</TabsTrigger>\n            <TabsTrigger value=\"two\">Two</TabsTrigger>\n          </TabsList>\n          <TabsContent value=\"one\">First panel</TabsContent>\n          <TabsContent value=\"two\">Second panel</TabsContent>\n        </Tabs>\n      ),\n      async () => {\n        expect(screen.getByRole('tab', { name: 'One' }).getAttribute('aria-selected')).toBe('true');\n        expect(screen.getByText('First panel')).toBeDefined();\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/tabs.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,20 @@
+/* Base reset. All component styling is StyleX; this file also receives StyleX's compiled CSS. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+}
+body {
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "table",
+  "title": "Table",
+  "description": "A styled data table.",
+  "registryDependencies": [
+    "@irfancoder/theme"
+  ],
+  "files": [
+    {
+      "path": "items/ui/table.tsx",
+      "content": "import * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { sx, type Style } from '@/lib/cx';\nimport { colors, fonts, space, text } from '@/styles/tokens.stylex';\n\ntype P<T extends keyof React.JSX.IntrinsicElements> = Omit<\n  ComponentProps<T>,\n  'className' | 'style'\n> & {\n  xstyle?: Style;\n};\n\nexport function Table({ xstyle, ...props }: P<'table'>) {\n  return (\n    <div data-slot=\"table-container\" {...sx(styles.container)}>\n      <table data-slot=\"table\" {...sx(styles.table, xstyle)} {...props} />\n    </div>\n  );\n}\nexport function TableHeader({ xstyle, ...props }: P<'thead'>) {\n  return <thead data-slot=\"table-header\" {...sx(xstyle)} {...props} />;\n}\nexport function TableBody({ xstyle, ...props }: P<'tbody'>) {\n  return <tbody data-slot=\"table-body\" {...sx(xstyle)} {...props} />;\n}\nexport function TableFooter({ xstyle, ...props }: P<'tfoot'>) {\n  return <tfoot data-slot=\"table-footer\" {...sx(styles.footer, xstyle)} {...props} />;\n}\nexport function TableRow({ xstyle, ...props }: P<'tr'>) {\n  return <tr data-slot=\"table-row\" {...sx(styles.row, xstyle)} {...props} />;\n}\nexport function TableHead({ xstyle, ...props }: P<'th'>) {\n  return <th data-slot=\"table-head\" {...sx(styles.cell, styles.head, xstyle)} {...props} />;\n}\nexport function TableCell({ xstyle, ...props }: P<'td'>) {\n  return <td data-slot=\"table-cell\" {...sx(styles.cell, xstyle)} {...props} />;\n}\nexport function TableCaption({ xstyle, ...props }: P<'caption'>) {\n  return <caption data-slot=\"table-caption\" {...sx(styles.caption, xstyle)} {...props} />;\n}\n\nconst styles = stylex.create({\n  container: { position: 'relative', width: '100%', overflowX: 'auto' },\n  table: {\n    width: '100%',\n    borderCollapse: 'collapse',\n    fontFamily: fonts.sans,\n    fontSize: text.sm,\n    color: colors.foreground,\n    captionSide: 'bottom',\n  },\n  row: {\n    borderBottomWidth: space.px,\n    borderBottomStyle: 'solid',\n    borderBottomColor: colors.border,\n    backgroundColor: { default: 'transparent', ':hover': colors.muted },\n  },\n  cell: {\n    paddingBlock: space.sm,\n    paddingInline: space.sm,\n    textAlign: 'start',\n    verticalAlign: 'middle',\n  },\n  head: {\n    height: space.controlLg,\n    fontWeight: text.weightMedium,\n    color: colors.mutedForeground,\n    whiteSpace: 'nowrap',\n  },\n  footer: { fontWeight: text.weightMedium, backgroundColor: colors.muted },\n  caption: { marginTop: space.lg, fontSize: text.sm, color: colors.mutedForeground },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/table.tsx"
+    },
+    {
+      "path": "items/tests/table.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport {\n  Table,\n  TableBody,\n  TableCell,\n  TableHead,\n  TableHeader,\n  TableRow,\n} from '@/components/ui/table';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Table', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => (\n        <Table>\n          <TableHeader>\n            <TableRow>\n              <TableHead>Name</TableHead>\n            </TableRow>\n          </TableHeader>\n          <TableBody>\n            <TableRow>\n              <TableCell>Ada</TableCell>\n            </TableRow>\n          </TableBody>\n        </Table>\n      ),\n      async () => {\n        expect(screen.getByRole('columnheader', { name: 'Name' })).toBeDefined();\n        expect(screen.getByRole('cell', { name: 'Ada' })).toBeDefined();\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/table.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

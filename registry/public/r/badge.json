@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge",
+  "title": "Badge",
+  "description": "A small status label.",
+  "registryDependencies": [
+    "@irfancoder/theme"
+  ],
+  "files": [
+    {
+      "path": "items/ui/badge.tsx",
+      "content": "import * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { sx, type Style } from '@/lib/cx';\nimport { colors, fonts, radii, space, text } from '@/styles/tokens.stylex';\n\nexport type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';\n\nexport type BadgeProps = Omit<ComponentProps<'span'>, 'className' | 'style'> & {\n  variant?: BadgeVariant;\n  xstyle?: Style;\n};\n\nexport function Badge({ variant = 'default', xstyle, ...props }: BadgeProps) {\n  return <span data-slot=\"badge\" {...sx(styles.base, variants[variant], xstyle)} {...props} />;\n}\n\nconst styles = stylex.create({\n  base: {\n    display: 'inline-flex',\n    alignItems: 'center',\n    gap: space.xs,\n    width: 'fit-content',\n    paddingBlock: space.xxs,\n    paddingInline: space.sm,\n    fontFamily: fonts.sans,\n    fontSize: text.xs,\n    fontWeight: text.weightMedium,\n    lineHeight: text.lineTight,\n    whiteSpace: 'nowrap',\n    borderWidth: space.px,\n    borderStyle: 'solid',\n    borderColor: 'transparent',\n    borderRadius: radii.full,\n  },\n});\n\nconst variants = stylex.create({\n  default: { backgroundColor: colors.accent, color: colors.accentForeground },\n  secondary: { backgroundColor: colors.secondary, color: colors.secondaryForeground },\n  destructive: { backgroundColor: colors.danger, color: colors.dangerForeground },\n  outline: { borderColor: colors.border, color: colors.foreground },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/badge.tsx"
+    },
+    {
+      "path": "items/tests/badge.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Badge } from '@/components/ui/badge';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Badge', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => <Badge variant=\"secondary\">New</Badge>,\n      async () => {\n        expect(screen.getByText('New').className).not.toBe('');\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/badge.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "switch",
+  "title": "Switch",
+  "description": "An on/off switch.",
+  "registryDependencies": [
+    "@irfancoder/theme"
+  ],
+  "files": [
+    {
+      "path": "items/ui/switch.tsx",
+      "content": "import { Switch as BaseSwitch } from '@base-ui/react/switch';\nimport * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { cx, type Style } from '@/lib/cx';\nimport { colors, motion, radii, shadows } from '@/styles/tokens.stylex';\n\nexport type SwitchProps = Omit<ComponentProps<typeof BaseSwitch.Root>, 'className'> & {\n  xstyle?: Style;\n};\n\nexport function Switch({ xstyle, ...props }: SwitchProps) {\n  return (\n    <BaseSwitch.Root\n      data-slot=\"switch\"\n      className={cx(\n        (s: { checked: boolean; disabled: boolean }) => [\n          styles.root,\n          s.checked && styles.rootChecked,\n          s.disabled && styles.disabled,\n        ],\n        xstyle,\n      )}\n      {...props}\n    >\n      <BaseSwitch.Thumb\n        data-slot=\"switch-thumb\"\n        className={cx((s: { checked: boolean }) => [\n          styles.thumb,\n          s.checked && styles.thumbChecked,\n        ])}\n      />\n    </BaseSwitch.Root>\n  );\n}\n\nconst styles = stylex.create({\n  root: {\n    position: 'relative',\n    display: 'inline-flex',\n    alignItems: 'center',\n    flexShrink: 0,\n    width: '2rem',\n    height: '1.15rem',\n    padding: '1px',\n    backgroundColor: colors.input,\n    borderWidth: 0,\n    borderRadius: radii.full,\n    cursor: 'pointer',\n    transitionProperty: 'background-color',\n    transitionDuration: motion.fast,\n    outlineStyle: 'solid',\n    outlineWidth: { default: 0, ':focus-visible': '2px' },\n    outlineColor: colors.ring,\n    outlineOffset: '2px',\n  },\n  rootChecked: { backgroundColor: colors.accent },\n  disabled: { opacity: 0.5, cursor: 'not-allowed' },\n  thumb: {\n    display: 'block',\n    width: '0.95rem',\n    height: '0.95rem',\n    backgroundColor: colors.background,\n    borderRadius: radii.full,\n    boxShadow: shadows.sm,\n    transitionProperty: 'transform',\n    transitionDuration: motion.fast,\n    transitionTimingFunction: motion.ease,\n  },\n  thumbChecked: { transform: 'translateX(0.85rem)' },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/switch.tsx"
+    },
+    {
+      "path": "items/tests/switch.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Switch } from '@/components/ui/switch';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Switch', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => <Switch aria-label=\"Notifications\" />,\n      async () => {\n        expect(screen.getByRole('switch', { name: 'Notifications' })).toBeDefined();\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/switch.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

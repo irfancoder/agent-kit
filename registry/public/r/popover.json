@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "popover",
+  "title": "Popover",
+  "description": "Floating content anchored to a trigger.",
+  "registryDependencies": [
+    "@irfancoder/theme",
+    "@irfancoder/popup-styles"
+  ],
+  "files": [
+    {
+      "path": "items/ui/popover.tsx",
+      "content": "import { Popover as BasePopover } from '@base-ui/react/popover';\nimport * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { popupStyles } from '@/components/ui/popup-styles';\nimport { cls, cx, isTransitioning, type Override, type Transition } from '@/lib/cx';\nimport { colors, space, text } from '@/styles/tokens.stylex';\n\nexport const Popover = BasePopover.Root;\nexport const PopoverTrigger = BasePopover.Trigger;\nexport const PopoverClose = BasePopover.Close;\n\nexport function PopoverContent({\n  xstyle,\n  sideOffset = 4,\n  align = 'center',\n  ...props\n}: Omit<ComponentProps<typeof BasePopover.Popup>, 'className'> &\n  Override & { sideOffset?: number; align?: 'start' | 'center' | 'end' }) {\n  return (\n    <BasePopover.Portal>\n      <BasePopover.Positioner\n        sideOffset={sideOffset}\n        align={align}\n        className={cls(popupStyles.positioner)}\n      >\n        <BasePopover.Popup\n          data-slot=\"popover-content\"\n          className={cx(\n            (s: Transition) => [\n              popupStyles.popup,\n              styles.popup,\n              isTransitioning(s) && popupStyles.hidden,\n            ],\n            xstyle,\n          )}\n          {...props}\n        />\n      </BasePopover.Positioner>\n    </BasePopover.Portal>\n  );\n}\n\nexport function PopoverTitle({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BasePopover.Title>, 'className'> & Override) {\n  return <BasePopover.Title className={cls(styles.title, xstyle)} {...props} />;\n}\n\nexport function PopoverDescription({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BasePopover.Description>, 'className'> & Override) {\n  return <BasePopover.Description className={cls(styles.description, xstyle)} {...props} />;\n}\n\nconst styles = stylex.create({\n  popup: { width: '18rem', padding: space.lg },\n  title: { margin: 0, fontSize: text.base, fontWeight: text.weightSemibold },\n  description: { margin: 0, marginTop: space.xs, color: colors.mutedForeground },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/popover.tsx"
+    },
+    {
+      "path": "items/tests/popover.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Popover, PopoverContent, PopoverTitle, PopoverTrigger } from '@/components/ui/popover';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Popover', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => (\n        <Popover defaultOpen>\n          <PopoverTrigger>Open</PopoverTrigger>\n          <PopoverContent>\n            <PopoverTitle>Details</PopoverTitle>\n          </PopoverContent>\n        </Popover>\n      ),\n      async () => {\n        expect(screen.getByText('Details')).toBeDefined();\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/popover.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "checkbox",
+  "title": "Checkbox",
+  "description": "A checkbox.",
+  "registryDependencies": [
+    "@irfancoder/theme",
+    "@irfancoder/icons"
+  ],
+  "files": [
+    {
+      "path": "items/ui/checkbox.tsx",
+      "content": "import { Checkbox as BaseCheckbox } from '@base-ui/react/checkbox';\nimport * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { CheckIcon } from '@/components/ui/icons';\nimport { cls, cx, type Style } from '@/lib/cx';\nimport { colors, motion, radii, space } from '@/styles/tokens.stylex';\n\nexport type CheckboxProps = Omit<ComponentProps<typeof BaseCheckbox.Root>, 'className'> & {\n  xstyle?: Style;\n};\n\nexport function Checkbox({ xstyle, ...props }: CheckboxProps) {\n  return (\n    <BaseCheckbox.Root\n      data-slot=\"checkbox\"\n      className={cx(\n        (s: { checked: boolean; disabled: boolean; valid?: boolean | null }) => [\n          styles.root,\n          s.checked && styles.checked,\n          s.valid === false && styles.invalid,\n          s.disabled && styles.disabled,\n        ],\n        xstyle,\n      )}\n      {...props}\n    >\n      <BaseCheckbox.Indicator data-slot=\"checkbox-indicator\" className={cls(styles.indicator)}>\n        <CheckIcon width={14} height={14} />\n      </BaseCheckbox.Indicator>\n    </BaseCheckbox.Root>\n  );\n}\n\nconst styles = stylex.create({\n  root: {\n    display: 'inline-flex',\n    alignItems: 'center',\n    justifyContent: 'center',\n    flexShrink: 0,\n    width: '1rem',\n    height: '1rem',\n    padding: 0,\n    color: colors.accentForeground,\n    backgroundColor: colors.background,\n    borderWidth: space.px,\n    borderStyle: 'solid',\n    borderColor: colors.input,\n    borderRadius: radii.sm,\n    cursor: 'pointer',\n    transitionProperty: 'background-color, border-color',\n    transitionDuration: motion.fast,\n    outlineStyle: 'solid',\n    outlineWidth: { default: 0, ':focus-visible': '2px' },\n    outlineColor: colors.ring,\n    outlineOffset: '2px',\n  },\n  checked: { backgroundColor: colors.accent, borderColor: colors.accent },\n  invalid: { borderColor: colors.danger },\n  disabled: { opacity: 0.5, cursor: 'not-allowed' },\n  indicator: { display: 'flex' },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/checkbox.tsx"
+    },
+    {
+      "path": "items/tests/checkbox.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport { Checkbox } from '@/components/ui/checkbox';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Checkbox', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => <Checkbox aria-label=\"Accept\" defaultChecked />,\n      async () => {\n        expect(screen.getByRole('checkbox', { name: 'Accept' }).getAttribute('aria-checked')).toBe(\n          'true',\n        );\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/checkbox.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

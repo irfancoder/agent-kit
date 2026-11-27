@@ -1,0 +1,8 @@
+{
+  "extends": "@kitapp/tsconfig/react.json",
+  "compilerOptions": {
+    "types": ["@rsbuild/core/types"],
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src", "rsbuild.config.ts", "rstest.config.ts", "stylex.config.ts"]
+}

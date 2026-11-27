@@ -1,0 +1,27 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "select",
+  "title": "Select",
+  "description": "Pick one option from a list.",
+  "registryDependencies": [
+    "@irfancoder/theme",
+    "@irfancoder/control-styles",
+    "@irfancoder/icons",
+    "@irfancoder/popup-styles"
+  ],
+  "files": [
+    {
+      "path": "items/ui/select.tsx",
+      "content": "import { Select as BaseSelect } from '@base-ui/react/select';\nimport * as stylex from '@stylexjs/stylex';\nimport type { ComponentProps } from 'react';\nimport { controlStyles } from '@/components/ui/control-styles';\nimport { CheckIcon, ChevronDownIcon } from '@/components/ui/icons';\nimport { popupStyles } from '@/components/ui/popup-styles';\nimport { cls, cx, type Override } from '@/lib/cx';\nimport { colors, space } from '@/styles/tokens.stylex';\n\nexport const Select = BaseSelect.Root;\nexport const SelectGroup = BaseSelect.Group;\n\nexport function SelectValue(props: ComponentProps<typeof BaseSelect.Value>) {\n  return <BaseSelect.Value data-slot=\"select-value\" {...props} />;\n}\n\nexport function SelectTrigger({\n  xstyle,\n  children,\n  ...props\n}: Omit<ComponentProps<typeof BaseSelect.Trigger>, 'className'> & Override) {\n  return (\n    <BaseSelect.Trigger\n      data-slot=\"select-trigger\"\n      className={cx(\n        (s: { disabled: boolean; valid?: boolean | null }) => [\n          controlStyles.base,\n          styles.trigger,\n          s.valid === false && controlStyles.invalid,\n          s.disabled && controlStyles.disabled,\n        ],\n        xstyle,\n      )}\n      {...props}\n    >\n      {children}\n      <BaseSelect.Icon className={cls(styles.icon)}>\n        <ChevronDownIcon />\n      </BaseSelect.Icon>\n    </BaseSelect.Trigger>\n  );\n}\n\nexport function SelectContent({\n  xstyle,\n  children,\n  sideOffset = 4,\n  ...props\n}: Omit<ComponentProps<typeof BaseSelect.Popup>, 'className'> &\n  Override & { sideOffset?: number }) {\n  return (\n    <BaseSelect.Portal>\n      <BaseSelect.Positioner\n        sideOffset={sideOffset}\n        alignItemWithTrigger={false}\n        className={cls(popupStyles.positioner)}\n      >\n        <BaseSelect.Popup\n          data-slot=\"select-content\"\n          className={cls(popupStyles.popup, styles.popup, xstyle)}\n          {...props}\n        >\n          <BaseSelect.List>{children}</BaseSelect.List>\n        </BaseSelect.Popup>\n      </BaseSelect.Positioner>\n    </BaseSelect.Portal>\n  );\n}\n\nexport function SelectItem({\n  xstyle,\n  children,\n  ...props\n}: Omit<ComponentProps<typeof BaseSelect.Item>, 'className'> & Override) {\n  return (\n    <BaseSelect.Item\n      data-slot=\"select-item\"\n      className={cx(\n        (s: { highlighted: boolean; disabled: boolean }) => [\n          popupStyles.item,\n          styles.item,\n          s.highlighted && popupStyles.highlighted,\n          s.disabled && popupStyles.disabled,\n        ],\n        xstyle,\n      )}\n      {...props}\n    >\n      <BaseSelect.ItemText>{children}</BaseSelect.ItemText>\n      <BaseSelect.ItemIndicator className={cls(styles.indicator)}>\n        <CheckIcon />\n      </BaseSelect.ItemIndicator>\n    </BaseSelect.Item>\n  );\n}\n\nexport function SelectLabel({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BaseSelect.GroupLabel>, 'className'> & Override) {\n  return <BaseSelect.GroupLabel className={cls(popupStyles.groupLabel, xstyle)} {...props} />;\n}\n\nexport function SelectSeparator({\n  xstyle,\n  ...props\n}: Omit<ComponentProps<typeof BaseSelect.Separator>, 'className'> & Override) {\n  return <BaseSelect.Separator className={cls(popupStyles.separator, xstyle)} {...props} />;\n}\n\nconst styles = stylex.create({\n  trigger: {\n    display: 'flex',\n    alignItems: 'center',\n    justifyContent: 'space-between',\n    gap: space.sm,\n    height: space.control,\n    cursor: 'pointer',\n    textAlign: 'start',\n  },\n  icon: { display: 'flex', color: colors.mutedForeground },\n  popup: {\n    minWidth: 'var(--anchor-width)',\n    maxHeight: 'var(--available-height)',\n    overflowY: 'auto',\n  },\n  item: { justifyContent: 'space-between', paddingInlineEnd: space.xs },\n  indicator: { display: 'flex', color: colors.accent },\n});\n",
+      "type": "registry:ui",
+      "target": "src/components/ui/select.tsx"
+    },
+    {
+      "path": "items/tests/select.test.tsx",
+      "content": "import { afterEach, describe, expect, test } from '@rstest/core';\nimport { cleanup, screen } from '@testing-library/react';\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue,\n} from '@/components/ui/select';\nimport { forEachTheme } from '@/test/render-themes';\n\nafterEach(cleanup);\n\ndescribe('Select', () => {\n  test('renders in both themes', async () => {\n    await forEachTheme(\n      () => (\n        <Select defaultValue=\"a\" items={{ a: 'Apple', b: 'Banana' }}>\n          <SelectTrigger aria-label=\"Fruit\">\n            <SelectValue />\n          </SelectTrigger>\n          <SelectContent>\n            <SelectItem value=\"a\">Apple</SelectItem>\n            <SelectItem value=\"b\">Banana</SelectItem>\n          </SelectContent>\n        </Select>\n      ),\n      async () => {\n        expect(screen.getByRole('combobox', { name: 'Fruit' }).textContent).toContain('Apple');\n      },\n    );\n  });\n});\n",
+      "type": "registry:file",
+      "target": "src/components/ui/__tests__/select.test.tsx"
+    }
+  ],
+  "type": "registry:ui"
+}

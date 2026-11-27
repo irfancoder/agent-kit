@@ -1,0 +1,4 @@
+{
+  "extends": "@kitapp/tsconfig/node.json",
+  "include": ["e2e.config.ts", "tests"]
+}
