@@ -1,21 +1,17 @@
-import { anthropic } from '@ai-sdk/anthropic';
 import { claudeCode } from '@e2e-dev/acp';
 import { web } from '@e2e-dev/web';
 import type { E2EConfig } from 'e2e';
 
 /*
  * Agent steps (agent.act) replay from the committed cache in .e2e/cache, so the
- * pre-push hook (--strict-cache) never calls a model. A model is only called to
- * record or re-record a step (pnpm e2e:record):
- *   - default: the Anthropic API. Set ANTHROPIC_API_KEY to record (preferred:
- *     it doesn't use plan limits). Without a key, replays still work, and a step
- *     that has to call the model fails with MODEL_PROVIDER_FAILED.
- *   - E2E_AGENT=claude-code: the local Claude Code login, over ACP.
+ * pre-push hook (--strict-cache) never starts an agent. Recording a step
+ * (pnpm e2e:record) runs it on Claude Code over ACP, signed in with your `claude`
+ * login (the Claude Max plan). ANTHROPIC_API_KEY is blanked for the agent so a key
+ * in the environment never takes over from the login and bills the API instead.
  */
-const defaultAgent =
-  process.env.E2E_AGENT === 'claude-code'
-    ? { executor: claudeCode({ model: 'sonnet' }) }
-    : { model: anthropic(process.env.E2E_MODEL ?? 'claude-sonnet-5-5') };
+const defaultAgent = {
+  executor: claudeCode({ model: 'sonnet', env: { ANTHROPIC_API_KEY: '' } }),
+};
 
 export default {
   // Fixed ids (not the project name) key the replay cache, so the recording

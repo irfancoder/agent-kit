@@ -10,13 +10,11 @@
   },
   "devDependencies": {
     "@agentclientprotocol/claude-agent-acp": "catalog:",
-    "@ai-sdk/anthropic": "catalog:",
     "@e2e-dev/acp": "catalog:",
     "@e2e-dev/web": "catalog:",
     "@kitapp/contracts": "workspace:*",
     "@kitapp/tsconfig": "workspace:*",
     "@types/node": "catalog:",
-    "ai": "catalog:",
     "e2e": "catalog:",
     "typescript": "catalog:",
     "valibot": "catalog:"

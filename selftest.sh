@@ -24,8 +24,11 @@ trap cleanup EXIT
 
 free_port() { node -e "const s=require('net').createServer();s.listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})"; }
 
-# Hooks must pass with no model credentials.
-unset ANTHROPIC_API_KEY E2E_AGENT
+# Hooks must pass with no agent: point Claude Code at an empty config so it has no
+# login, and a step that isn't recorded fails instead of spending the plan's usage.
+export CLAUDE_CONFIG_DIR="$WORK/no-claude-login"
+mkdir -p "$CLAUDE_CONFIG_DIR"
+unset ANTHROPIC_API_KEY
 
 FAILED=()
 for spec in "${VARIANTS[@]}"; do
