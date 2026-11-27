@@ -26,9 +26,9 @@ locks it so every later screen shares it.
 
 ## Before you start
 
-1. You need the **Hallmark** skill. In Rakazo it's in the bot's skill list; on your own
-   machine, agent-kit's `scripts/install-hallmark.sh` installs it. Below, `<hallmark>`
-   means its skill folder. If you don't have the skill, append a line to
+1. You need the **Hallmark** skill (tested with v2.0.0). In Rakazo it's in the bot's
+   skill list; on your own machine, `npx skills add nutlope/hallmark` installs it.
+   Below, `<hallmark>` means its skill folder. If you don't have the skill, append a line to
    `.agent/PROGRESS.md` saying so and stop. Don't improvise a design without it.
 2. Read `.agent/BRIEF.md` and `.agent/GOAL.md`. They answer Hallmark's four questions
    (material, audience, use, tone). Don't ask the owner; Hallmark doesn't ask when

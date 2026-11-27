@@ -53,10 +53,11 @@ Every machine or bot environment that runs it needs:
 | Skill | Copy |
 | --- | --- |
 | `agent-kit` | `SKILL.md` from this repo. It only holds instructions, and runs the CLI with `pnpm dlx`. Recopy it only when `SKILL.md` itself changes |
-| `hallmark` | `skills/hallmark` from [nutlope/hallmark](https://github.com/nutlope/hallmark) at the commit in `HALLMARK_PIN` (`scripts/install-hallmark.sh`), so it matches the version agent-kit was tested with |
+| `hallmark` | `skills/hallmark` from [nutlope/hallmark](https://github.com/nutlope/hallmark). agent-kit was tested with **v2.0.0** (commit `04977e1`); install that version |
 
-**On your own machine,** install Hallmark at the pinned version with
-`scripts/install-hallmark.sh` from a checkout of this repo.
+**On your own machine,** install Hallmark yourself if you want design runs locally:
+`npx skills add nutlope/hallmark` (that's the latest version, not necessarily the tested
+one).
 
 ## Start a project
 
@@ -241,10 +242,11 @@ How it fits together:
 - Light and dark follow the OS. The Dark mode toggle in the header pins one, and the
   choice is saved.
 
-Hallmark isn't shipped in each project: it's a skill of the environment (Rakazo's skill
-list, or `~/.claude/skills` on your own machine). To move to a newer version, change
-`HALLMARK_PIN` in `scripts/install-hallmark.sh` on purpose, as you would bump a
-dependency. Then rerun the script locally and copy that commit into Rakazo.
+Hallmark isn't part of agent-kit or of any project: it's a skill of the environment,
+installed in Rakazo's skill list (or `~/.claude/skills` on your own machine). The
+design-language skill relies on Hallmark's scaffold command, its linter and its waiver
+format, so move Rakazo to a newer Hallmark on purpose, as you would bump a dependency.
+Try a design run on a scratch project first, then update the tested version above.
 
 ## Variants
 
@@ -304,9 +306,8 @@ The kit itself:
 | `templates/node-postgres/base/` | The Fastify api, docker-compose, e2e serve script |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
 | `SKILL.md` | The agent-kit skill: asks for the brief and choices, then runs the CLI |
-| `selftest.sh` | Builds the CLI and scaffolds every variant with it |
-| `scripts/record-e2e-cache.sh` | Records the e2e replay cache that ships in the template |
-| `scripts/install-hallmark.sh` | Installs Hallmark at the pinned commit on a local machine (`HALLMARK_PIN`) |
+| `test/selftest.ts` | `pnpm test`: builds the CLI and scaffolds every variant with it |
+| `scripts/record-cache.ts` | `pnpm record-cache`: records the e2e replay cache that ships in the template |
 | `FINDINGS.md` | Research behind the tool choices |
 
 Working on it:
@@ -315,6 +316,7 @@ Working on it:
 pnpm install
 pnpm dev -- /tmp/try-it      # run the CLI from source
 pnpm check                   # type checks, and bundle to dist/agent-kit.mjs (commit it)
+pnpm test                    # the selftest (below)
 ```
 
 To change the template or the CLI:
@@ -322,12 +324,13 @@ To change the template or the CLI:
 1. Edit files under `templates/` or `src/`. Templates must stay valid as they are: the
    `kitapp` placeholder is a real package name, so don't use `__NAME__`-style tokens.
 2. If the example UI or the e2e tests changed, re-record the replay cache with
-   `./scripts/record-e2e-cache.sh` (signed in with `claude`), and commit
+   `pnpm record-cache` (signed in with `claude`), and commit
    `templates/shared/packages/e2e/.e2e/cache`.
-3. Run `./selftest.sh`, or `./selftest.sh node-postgres` for one variant. It builds the
-   CLI, scaffolds each variant, runs both hooks with Claude Code signed out, and fails on
-   any leftover placeholder. It must pass before an update is merged. `KEEP=1` keeps the
-   scaffolded projects so you can look at them.
+3. Run `pnpm test`, or `pnpm test node-postgres` for one variant. It builds the CLI
+   (and fails if the committed `dist/` is out of date), scaffolds each variant, runs
+   the hooks with Claude Code signed out, and fails on any leftover placeholder. It must
+   pass before an update is merged. `KEEP=1 pnpm test` keeps the scaffolded projects so
+   you can look at them.
 4. Commit `dist/` with the change.
 
 Releasing:

@@ -95,11 +95,10 @@ Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at 
 - **Network:** only `theme.mjs photos --save` (Wikimedia downloads) and `imagegen.mjs`
   (Together AI, only with `TOGETHER_API_KEY`) call out. The scaffold, the deal and the
   linter are local.
-- **Install:** `npx skills add nutlope/hallmark` installs whatever is latest, so
-  agent-kit's `scripts/install-hallmark.sh` fetches the pinned commit and copies
-  `skills/hallmark` into `~/.claude/skills` and `~/.agents/skills` on a local machine.
-  In Rakazo, Hallmark is copied into the bot's skill list at the same commit. Hallmark's
-  optional edit-time hook edits Claude Code settings, so it isn't installed.
+- **Install:** Hallmark is a skill of the environment, not of agent-kit: it's installed
+  in Rakazo's skill list (or with `npx skills add nutlope/hallmark` on a local machine).
+  agent-kit records the version it was tested with, v2.0.0 (`04977e1`), in its README.
+  Hallmark's optional edit-time hook edits Claude Code settings, so it isn't used.
 
 ## Running from Rakazo, and the CLI
 
@@ -117,8 +116,8 @@ has no runtime dependencies: its questions use `node:readline`. Releases are git
   (`gh auth setup-git`). Public, it needs no login.
 - **Dotfiles:** packing drops `.gitignore` files, so the template stores it as
   `_gitignore` and the CLI renames it. Every other template dotfile (`.agent/`, `.claude/`,
-  `.env.example`, `.e2e/cache/`) packs fine; `selftest.sh` compares nothing here, but a
-  `pnpm pack` listing matched every tracked template file.
+  `.env.example`, `.e2e/cache/`) packs fine: a `pnpm pack` listing matched every tracked
+  template file, and `pnpm test` checks the generated `.gitignore`.
 - **Executable bits:** the CLI marks the project's `.sh` files executable after copying.
 - **No temp files:** the skill pipes the brief to `--brief-file -`, and pnpm manages its
   own download cache.
