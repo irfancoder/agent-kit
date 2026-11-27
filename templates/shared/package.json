@@ -12,7 +12,8 @@
     "test": "turbo run test",
     "e2e": "pnpm --filter @kitapp/e2e e2e",
     "prepare": "lefthook install",
-    "check:agent": "node scripts/check-agent-state.ts"
+    "check:agent": "node scripts/check-agent-state.ts",
+    "agent": "node scripts/agent.ts"
   },
   "devDependencies": {
     "@types/node": "catalog:",
