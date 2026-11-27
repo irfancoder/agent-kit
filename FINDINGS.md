@@ -9,7 +9,7 @@ answers were read.
 
 | Question | Answer |
 | --- | --- |
-| Brand palette and type | Neutral starter set: greys plus one indigo accent, Inter/system type on a 1.2 scale, 4px spacing grid. All in `registry/items/theme/tokens.stylex.ts`; swap values there. |
+| Brand palette and type | None in agent-kit: projects start neutral (greys, system type, the 1.2 app scale) and set their own design language with the design-language skill (Hallmark). Values live in `registry/items/theme/tokens.css`. |
 | Default UI language | English and Bahasa Melayu from day one: `en.ts` (source of truth) and `ms.ts`, typed `t()` and `tCount()` (Intl.PluralRules). |
 | Cloudflare database | Both, chosen at scaffold time: `--db hyperdrive` (default: Postgres through Hyperdrive, same Kysely migrations as the Node variant) or `--db d1` (D1/SQLite with kysely-d1 and SQL migrations). |
 | SECURITY_CHECKLIST.md | A starter version is in `templates/shared/.agent/SECURITY_CHECKLIST.md`. Irfan supplies the final text. |
@@ -41,9 +41,40 @@ Docs: [Rsbuild CSS-in-JS](https://rsbuild.rs/guide/styling/css-in-js), [@stylexj
 
 - **Rsbuild plugin:** StyleX's own `@stylexjs/unplugin` (0.19), through its `rspack` adapter in `tools.rspack.plugins`. It now ships an Rspack adapter, so the third-party `unplugin-stylex` isn't needed. `@stylexjs/unplugin` uses Babel; `@stylexswc/unplugin` (Rust) is the faster option if builds get slow.
 - **Rstest:** Rstest is Rsbuild-based and takes the same `tools.rspack.plugins`, so `apps/web/stylex.config.ts` exports one plugin factory used by both `rsbuild.config.ts` and `rstest.config.ts`. Component tests render with real StyleX class names in happy-dom.
-- **Gotcha found:** StyleX compiles token references to plain `var(--x…)` strings and removes the import, so the bundler never loads `tokens.stylex.ts` and its variable defaults never reach the CSS. `themes.ts` keeps a side-effect `import './tokens.stylex'` to fix it.
+- **Tokens:** `tokens.stylex.ts` uses `stylex.defineConsts` with `var(--…)` values that point at `tokens.css`. Constants compile straight into each rule, so there's one variable hop, themes work on any element, and nothing depends on the token module being loaded at runtime. (An earlier `defineVars` version hit a gotcha: StyleX drops the token import, so the bundler never loaded the file and its variable defaults never reached the CSS.)
+- **Light and dark:** each colour is one `light-dark()` declaration; `color-scheme` on `:root` follows the OS and `data-theme` pins it. Supported since Chrome 123, Safari 17.5 and Firefox 120.
 - **Gotcha found:** Rsbuild's `loadEnv` copies the whole `.env` into `process.env` by default, which leaked `NODE_ENV=development` into production builds. The config passes `processEnv: {}`.
 - **Oxlint and StyleX's lint rules:** works. Oxlint 1.95's `jsPlugins` loads `@stylexjs/eslint-plugin`; `valid-styles`, `no-unused`, `valid-shorthands` and `no-legacy-contextual-styles` run in the `react` preset. No gap.
+
+## Hallmark (design language)
+
+Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at `04977e1` (v2.0.0).
+
+- **What it is:** a design skill for Claude Code and Codex. It has a "Floor" of rules a
+  build can't break (every colour and font through a token, focus-visible on every
+  control, reduced-motion fallbacks, no invented metrics). It deals a theme from about 50
+  so projects don't converge on one look, and has an app-screen scope for tools and
+  dashboards. Its linter is `scripts/sloplint.mjs` (a static tier, plus a render tier
+  that needs puppeteer-core and Chrome).
+- **Where it plugs in:** Hallmark's source of truth is a `tokens.css` of CSS variables with
+  fixed role names (`--color-paper`, `--color-ink`, `--color-accent`, `--font-body`,
+  `--text-*`, `--space-*`, …). Its rule for an existing project is to map onto the
+  project's token names, not add a parallel set. So the template's `tokens.css` uses
+  Hallmark's names, and `tokens.stylex.ts` points StyleX vars at them. A Hallmark run
+  replaces values in one file and the StyleX components follow.
+- **Locking:** "lock the system" writes `DESIGN.md` at the repo root. Hallmark's
+  pre-flight treats a root `DESIGN.md` as locked and makes every later run follow it.
+  That is why the template keeps its own rubric in `.agent/DESIGN.md` and ships no root
+  `DESIGN.md`.
+- **App scale:** Hallmark's app-screen type scale (0.75 / 0.875 / 1 / 1.2 / 1.44 / 1.728 /
+  2.074rem) is the template's existing scale, so nothing moves.
+- **Network:** only `theme.mjs photos --save` (Wikimedia downloads) and `imagegen.mjs`
+  (Together AI, only with `TOGETHER_API_KEY`) call out. The scaffold, the deal and the
+  linter are local.
+- **Install:** `npx skills add nutlope/hallmark` installs whatever is latest, so
+  agent-kit's `scripts/install-hallmark.sh` fetches the pinned commit and copies
+  `skills/hallmark` into `~/.claude/skills` and `~/.agents/skills`. Hallmark's optional
+  edit-time hook edits Claude Code settings, so it isn't installed.
 
 ## shadcn without Tailwind
 

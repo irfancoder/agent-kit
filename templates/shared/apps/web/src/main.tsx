@@ -4,11 +4,10 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ToastProvider } from '@/components/ui/toast';
 import { I18nProvider } from '@/i18n/index.tsx';
+import { initTheme } from '@/lib/theme.ts';
 import { routeTree } from './routeTree.gen.ts';
 import './styles/global.css';
-// StyleX compiles token references to plain CSS variables and drops those
-// imports, so without this the bundler never loads the token file and its
-// variable defaults never reach the CSS.
+// StyleX drops token imports once compiled; this keeps the token file in the bundle.
 import '@/styles/tokens.stylex';
 
 const queryClient = new QueryClient({
@@ -22,6 +21,8 @@ declare module '@tanstack/react-router' {
     router: typeof router;
   }
 }
+
+initTheme();
 
 const root = document.getElementById('root');
 if (!root) throw new Error('#root is missing from index.html');

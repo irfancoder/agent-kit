@@ -1,3 +1,6 @@
+/* Design tokens first (Hallmark's names; the design-language skill rewrites them). */
+@import './tokens.css';
+
 /* Base reset. All component styling is StyleX; this file also receives StyleX's compiled CSS. */
 *,
 *::before,

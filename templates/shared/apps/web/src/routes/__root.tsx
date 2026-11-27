@@ -3,8 +3,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { locales, localeNames, useI18n, type Locale } from '@/i18n/index.tsx';
-import { useTheme } from '@/lib/theme.ts';
-import { themes } from '@/styles/themes';
+import { toggleTheme } from '@/lib/theme.ts';
 import { colors, fonts, space, text } from '@/styles/tokens.stylex';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
@@ -13,9 +12,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootLayout() {
   const { t, locale, setLocale } = useI18n();
-  const [theme, toggleTheme] = useTheme();
   return (
-    <div {...stylex.props(themes[theme], styles.shell)}>
+    <div {...stylex.props(styles.shell)}>
       <header {...stylex.props(styles.header)}>
         <Link to="/" {...stylex.props(styles.brand)}>
           {t('app.title')}

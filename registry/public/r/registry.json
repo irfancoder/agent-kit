@@ -7,8 +7,13 @@
       "name": "theme",
       "type": "registry:theme",
       "title": "IRFANCODER theme",
-      "description": "Design tokens (stylex.defineVars), light and dark themes (stylex.createTheme), the cx/sx StyleX helpers, and a test helper that renders in both themes. Every component depends on it.",
+      "description": "Design tokens (tokens.css, in Hallmark's token names), their StyleX handles (tokens.stylex.ts), light/dark switching, the cx/sx StyleX helpers, and a test helper that renders in both themes. Every component depends on it.",
       "files": [
+        {
+          "path": "items/theme/tokens.css",
+          "type": "registry:file",
+          "target": "src/styles/tokens.css"
+        },
         {
           "path": "items/theme/tokens.stylex.ts",
           "type": "registry:file",

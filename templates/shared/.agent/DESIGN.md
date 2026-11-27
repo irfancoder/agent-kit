@@ -2,34 +2,33 @@
 
 Read by the Builder and the Evaluator before any UI work.
 
-## Tokens
+## Design language
 
-All styling is StyleX and every value comes from the IRFANCODER tokens. Never
-hard-code a colour, size, radius or shadow in a component.
+The project starts with agent-kit's neutral look. Its own design language is set once,
+by the **design-language** skill (`.claude/skills/design-language`), which runs
+[Hallmark](https://github.com/nutlope/hallmark) and locks the result in `DESIGN.md` at
+the repo root. The Planner makes that the first ticket, before any UI feature.
 
-- Token file: `apps/web/src/styles/tokens.stylex.ts` (`stylex.defineVars`)
-  - `colors`: background, foreground, surface, muted, border, input, ring, accent, secondary, danger, success, overlay (each with a `*Foreground` / `*Hover` where needed)
-  - `fonts`: sans, mono
-  - `text`: type scale and weights
-  - `space`: 4px grid plus control heights
-  - `radii`, `shadows`, `motion`, `layers`
-- Themes: `apps/web/src/styles/themes.ts` (`stylex.createTheme`): `light` and `dark`. Without one, tokens follow the OS setting.
+- Once `DESIGN.md` exists at the root it is the rule: every UI ticket follows it.
+- Values live in `apps/web/src/styles/tokens.css`, in Hallmark's token names.
+  `tokens.stylex.ts` points StyleX at them. Components never hard-code a colour, size,
+  radius or shadow.
 - Components: `apps/web/src/components/ui/`, from the IRFANCODER registry. Add more with
-  `pnpm --dir apps/web exec shadcn add @irfancoder/<name>`. A component the registry lacks goes into the
-  registry (agent-kit/registry), not copied between projects.
+  `pnpm --dir apps/web exec shadcn add @irfancoder/<name>`. A component the registry lacks
+  goes into the registry (agent-kit/registry), not copied between projects.
 
 ## Type and spacing scale
 
-| Token                                                   | Value                            | Use                               |
-| ------------------------------------------------------- | -------------------------------- | --------------------------------- |
-| `text.xs`                                               | 0.75rem                          | badges, captions                  |
-| `text.sm`                                               | 0.875rem                         | body in dense UI, labels, buttons |
-| `text.base`                                             | 1rem                             | body                              |
-| `text.lg`                                               | 1.2rem                           | card titles                       |
-| `text.xl`                                               | 1.44rem                          | section headings                  |
-| `text.xxl`                                              | 1.728rem                         | page headings                     |
-| `text.xxxl`                                             | 2.074rem                         | hero                              |
-| `space.xs` / `sm` / `md` / `lg` / `xl` / `xxl` / `xxxl` | 4 / 8 / 12 / 16 / 24 / 32 / 48px | gaps and padding                  |
+Hallmark's app-screen scale (ratio 1.2 from 16px), in `tokens.css`:
+
+| Token                                         | Value                            | Use                        |
+| --------------------------------------------- | -------------------------------- | -------------------------- |
+| `--text-xs` / `-sm`                           | 0.75 / 0.875rem                  | labels, captions, dense UI |
+| `--text-md`                                   | 1rem                             | body                       |
+| `--text-lg` / `-xl`                           | 1.2 / 1.44rem                    | card and section titles    |
+| `--text-2xl` / `-3xl`                         | 1.728 / 2.074rem                 | page headings              |
+| `--space-2xs` … `--space-2xl`                 | 4 / 8 / 12 / 16 / 24 / 40 / 64px | gaps and padding           |
+| `--control-sm` / `--control` / `--control-lg` | 32 / 36 / 40px                   | control heights            |
 
 ## Reference screenshots
 

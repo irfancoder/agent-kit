@@ -8,7 +8,7 @@ Guide for people and agents working in this repo. Scaffolded by agent-kit.
 | --------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `apps/web`                                    | React 19 SPA: Rsbuild, TanStack Router (file-based, `src/routes`) and Query, ky, StyleX |
 | `apps/web/src/components/ui`                  | Components from the IRFANCODER shadcn registry (StyleX on Base UI)                      |
-| `apps/web/src/styles/tokens.stylex.ts`        | Design tokens. Every style value comes from here                                        |
+| `apps/web/src/styles/tokens.css`              | Design tokens (Hallmark's names); `tokens.stylex.ts` points StyleX at them              |
 | `apps/web/src/i18n`                           | Typed `t()` messages: `en.ts` (source of truth) and `ms.ts`                             |
 | `apps/api`                                    | The api (see `apps/api/src/app.ts`), with Valibot validation, Pino logs, Kysely         |
 | `packages/contracts`                          | Valibot schemas and the one route map shared by web and api; generates `/openapi.json`  |
@@ -36,6 +36,7 @@ API docs: http://127.0.0.1:3001/docs (Scalar) and `/openapi.json`.
 - **API:** a change starts in `packages/contracts/src/routes.ts` (route + schemas). The api registers it with `defineRoute`, which validates the request and the response against the contract. `/openapi.json` must show the change.
 - **Errors:** every api error has the shape `{ "error": { "code", "message", "details"? } }`.
 - **Env:** a new env var goes into the env schema (`apps/api/src/env.ts`) and `.env.example`. The api refuses to start on a missing or bad value.
+- **Design language:** set once with the `design-language` skill (Hallmark), locked in `DESIGN.md` at the root. The Planner schedules it before any UI feature; after that, every UI ticket follows `DESIGN.md`.
 - **UI:** StyleX only, values from the tokens, components from `@/components/ui`. Need another component? `pnpm --dir apps/web exec shadcn add @irfancoder/<name>`. If the registry lacks it, add it to the registry rather than copying it between projects. Read `.agent/DESIGN.md` first.
 - **Copy:** user-facing text goes through `t()`; add the key to `en.ts` and `ms.ts`.
 - **Database:** Kysely, no ORM. Add a migration file and list it in the migrations map; migrations run on boot.

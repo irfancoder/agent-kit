@@ -37,6 +37,24 @@ pnpm --dir packages/e2e exec e2e-web install chromium   # once per machine
 
 Requirements: Node.js 24.8+, pnpm 12, git, Docker (for Postgres), rsync, python3 (selftest).
 
+## Design language
+
+Scaffolded projects start with a neutral look. Each project defines its own design
+language later, with the **design-language** skill it ships with
+(`.claude/skills/design-language`). The skill drives [Hallmark](https://github.com/nutlope/hallmark),
+an MIT-licensed design skill, and locks the result in the project's `DESIGN.md`.
+
+Install Hallmark once per machine, at the version agent-kit pins:
+
+```bash
+./scripts/install-hallmark.sh
+```
+
+Every value lives in the project's `apps/web/src/styles/tokens.css`, in Hallmark's token
+names; `tokens.stylex.ts` points StyleX at them. A new design language is therefore a new
+`tokens.css`, and components don't change. To move to a newer Hallmark, change
+`HALLMARK_PIN` in the script on purpose, as you would bump a dependency.
+
 ## Variants
 
 | | `node-postgres` | `hono-cloudflare --db hyperdrive` | `hono-cloudflare --db d1` |
@@ -55,6 +73,7 @@ No variant has deploy scripts or real credentials: agents never deploy.
 - `packages/e2e`: e2e tests (agent steps + `expect` assertions) with a committed replay cache
 - Oxlint (with StyleX's lint rules) + oxfmt, Rstest, lefthook (pre-commit: format, lint, `.agent/` check, types, unit tests; pre-push: e2e with `--strict-cache`)
 - `AGENTS.md`, `.agent/` coordination files, `DESIGN.md` with the design rubric, `SECURITY_CHECKLIST.md`
+- The `design-language` skill (Hallmark) and design tokens in Hallmark's names
 
 ## Layout
 
@@ -66,6 +85,7 @@ No variant has deploy scripts or real credentials: agents never deploy.
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
 | `registry/` | The IRFANCODER shadcn registry: StyleX components on Base UI (source in `items/`, built JSON in `public/r/`) |
 | `scripts/record-e2e-cache.sh` | Records the e2e replay cache that ships in the template |
+| `scripts/install-hallmark.sh` | Installs the Hallmark design skill at a pinned commit |
 | `FINDINGS.md` | Research behind the tool choices |
 
 ## Updating the template

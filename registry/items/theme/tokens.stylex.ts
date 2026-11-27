@@ -1,103 +1,95 @@
 import * as stylex from '@stylexjs/stylex';
 
 /*
- * IRFANCODER design tokens: a neutral starter set (greys plus one accent).
- * Swap values here to rebrand. Every component style reads these vars;
- * no component hard-codes a colour, size or radius.
- * Light is the default; dark applies with the OS setting, or explicitly via
- * the themes in themes.ts.
+ * StyleX handles on the design tokens in tokens.css. Every entry is a plain
+ * var(--…) pointer (defineVars compiles it straight into each rule), so the
+ * values, light/dark and any restyle live in tokens.css alone.
+ *
+ * This file is the only place where the components' key names are translated to
+ * Hallmark's token names (for example space.lg is --space-md); components never
+ * use the CSS names directly.
  */
-const DARK = '@media (prefers-color-scheme: dark)';
-
 export const colors = stylex.defineVars({
-  background: { default: '#ffffff', [DARK]: '#0b0b0f' },
-  foreground: { default: '#18181b', [DARK]: '#f4f4f5' },
-  surface: { default: '#ffffff', [DARK]: '#141418' },
-  surfaceForeground: { default: '#18181b', [DARK]: '#f4f4f5' },
-  muted: { default: '#f4f4f5', [DARK]: '#1f1f25' },
-  mutedForeground: { default: '#5f5f6b', [DARK]: '#a1a1aa' },
-  border: { default: '#e4e4e7', [DARK]: '#2b2b33' },
-  input: { default: '#d4d4d8', [DARK]: '#3a3a44' },
-  ring: { default: '#4f46e5', [DARK]: '#818cf8' },
-  accent: { default: '#4f46e5', [DARK]: '#818cf8' },
-  accentHover: { default: '#4338ca', [DARK]: '#a5b4fc' },
-  accentForeground: { default: '#ffffff', [DARK]: '#0b0b0f' },
-  secondary: { default: '#f4f4f5', [DARK]: '#26262d' },
-  secondaryHover: { default: '#e4e4e7', [DARK]: '#30303a' },
-  secondaryForeground: { default: '#18181b', [DARK]: '#f4f4f5' },
-  danger: { default: '#dc2626', [DARK]: '#f87171' },
-  dangerHover: { default: '#b91c1c', [DARK]: '#fca5a5' },
-  dangerForeground: { default: '#ffffff', [DARK]: '#0b0b0f' },
-  success: { default: '#15803d', [DARK]: '#4ade80' },
-  overlay: { default: 'rgba(24, 24, 27, 0.4)', [DARK]: 'rgba(0, 0, 0, 0.6)' },
+  background: 'var(--color-paper)',
+  foreground: 'var(--color-ink)',
+  surface: 'var(--color-paper-2)',
+  surfaceForeground: 'var(--color-ink)',
+  muted: 'var(--color-paper-3)',
+  mutedForeground: 'var(--color-muted)',
+  border: 'var(--color-rule)',
+  input: 'var(--color-rule-2)',
+  ring: 'var(--color-focus)',
+  accent: 'var(--color-accent)',
+  accentHover: 'var(--color-accent-hover)',
+  accentForeground: 'var(--color-accent-ink)',
+  secondary: 'var(--color-paper-3)',
+  secondaryHover: 'var(--color-secondary-hover)',
+  secondaryForeground: 'var(--color-ink)',
+  danger: 'var(--color-error)',
+  dangerHover: 'var(--color-error-hover)',
+  dangerForeground: 'var(--color-error-ink)',
+  success: 'var(--color-success)',
+  overlay: 'var(--color-overlay)',
 });
 
 export const fonts = stylex.defineVars({
-  sans: 'Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
-  mono: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+  sans: 'var(--font-body)',
+  mono: 'var(--font-mono)',
 });
 
-/** Type scale (1.2 ratio from a 16px body). */
 export const text = stylex.defineVars({
-  xs: '0.75rem',
-  sm: '0.875rem',
-  base: '1rem',
-  lg: '1.2rem',
-  xl: '1.44rem',
-  xxl: '1.728rem',
-  xxxl: '2.074rem',
-  lineTight: '1.25',
-  lineNormal: '1.5',
-  weightNormal: '400',
-  weightMedium: '500',
-  weightSemibold: '600',
-  weightBold: '700',
+  xs: 'var(--text-xs)',
+  sm: 'var(--text-sm)',
+  base: 'var(--text-md)',
+  lg: 'var(--text-lg)',
+  xl: 'var(--text-xl)',
+  xxl: 'var(--text-2xl)',
+  xxxl: 'var(--text-3xl)',
+  lineTight: 'var(--leading-tight)',
+  lineNormal: 'var(--leading-normal)',
+  weightNormal: 'var(--weight-normal)',
+  weightMedium: 'var(--weight-medium)',
+  weightSemibold: 'var(--weight-semibold)',
+  weightBold: 'var(--weight-bold)',
 });
 
-/** 4px spacing grid. */
 export const space = stylex.defineVars({
-  px: '1px',
-  xxs: '0.125rem',
-  xs: '0.25rem',
-  sm: '0.5rem',
-  md: '0.75rem',
-  lg: '1rem',
-  xl: '1.5rem',
-  xxl: '2rem',
-  xxxl: '3rem',
-  control: '2.25rem',
-  controlSm: '2rem',
-  controlLg: '2.5rem',
+  px: 'var(--rule-hair)',
+  xxs: 'var(--space-3xs)',
+  xs: 'var(--space-2xs)',
+  sm: 'var(--space-xs)',
+  md: 'var(--space-sm)',
+  lg: 'var(--space-md)',
+  xl: 'var(--space-lg)',
+  xxl: 'var(--space-xl)',
+  xxxl: 'var(--space-2xl)',
+  control: 'var(--control)',
+  controlSm: 'var(--control-sm)',
+  controlLg: 'var(--control-lg)',
 });
 
 export const radii = stylex.defineVars({
-  sm: '0.25rem',
-  md: '0.5rem',
-  lg: '0.75rem',
-  full: '9999px',
+  sm: 'var(--radius-inner)',
+  md: 'var(--radius-control)',
+  lg: 'var(--radius-card)',
+  full: 'var(--radius-pill)',
 });
 
 export const shadows = stylex.defineVars({
-  sm: { default: '0 1px 2px rgba(24, 24, 27, 0.06)', [DARK]: '0 1px 2px rgba(0, 0, 0, 0.5)' },
-  md: {
-    default: '0 4px 12px rgba(24, 24, 27, 0.08), 0 1px 3px rgba(24, 24, 27, 0.06)',
-    [DARK]: '0 4px 12px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4)',
-  },
-  lg: {
-    default: '0 12px 32px rgba(24, 24, 27, 0.14)',
-    [DARK]: '0 12px 32px rgba(0, 0, 0, 0.6)',
-  },
+  sm: 'var(--shadow-card)',
+  md: 'var(--shadow-pop)',
+  lg: 'var(--shadow-modal)',
 });
 
 export const motion = stylex.defineVars({
-  fast: '120ms',
-  normal: '200ms',
-  ease: 'cubic-bezier(0.2, 0, 0, 1)',
+  fast: 'var(--dur-micro)',
+  normal: 'var(--dur-short)',
+  ease: 'var(--ease-out)',
 });
 
 export const layers = stylex.defineVars({
-  popover: '50',
-  dialog: '60',
-  toast: '70',
-  tooltip: '80',
+  popover: 'var(--z-dropdown)',
+  dialog: 'var(--z-modal)',
+  toast: 'var(--z-toast)',
+  tooltip: 'var(--z-tooltip)',
 });
