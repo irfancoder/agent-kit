@@ -11,7 +11,7 @@
     "typescript/consistent-type-imports": "error",
     "import/no-cycle": "error",
     "eqeqeq": "error",
-    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "**/*.stylex"] }],
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
     "import/no-named-as-default-member": "off"
   },
   "ignorePatterns": ["**/dist/**", "**/routeTree.gen.ts", "**/.e2e/**", "**/node_modules/**"]

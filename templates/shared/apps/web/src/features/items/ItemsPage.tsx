@@ -1,19 +1,16 @@
-import * as stylex from '@stylexjs/stylex';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@ui-sdk/react/button';
+import { Field, FieldError, FieldLabel } from '@ui-sdk/react/field';
+import { Input } from '@ui-sdk/react/input';
+import { toast } from '@ui-sdk/react/toast';
 import { useState, type FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Field, FieldError, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/toast';
+import { Card } from '@/components/Card.tsx';
+import { EmptyState } from '@/components/EmptyState.tsx';
 import { useI18n } from '@/i18n/index.tsx';
-import { colors, space, text } from '@/styles/tokens.stylex';
 import { itemsQuery, useCreateItem } from './queries.ts';
 
 export function ItemsPage() {
   const { t } = useI18n();
-  const toast = useToast();
   const createItem = useCreateItem();
   const [name, setName] = useState('');
 
@@ -23,21 +20,19 @@ export function ItemsPage() {
       { name },
       {
         onSuccess: () => setName(''),
-        onError: (error) =>
-          toast.add({ title: t('items.createError', { message: error.message }), type: 'error' }),
+        onError: (error) => toast.error(t('items.createError', { message: error.message })),
       },
     );
   };
 
   return (
-    <div {...stylex.props(styles.page)}>
-      <h1 {...stylex.props(styles.heading)}>{t('items.heading')}</h1>
+    <div className="flex flex-col gap-10">
+      <h1 className="text-2xl font-bold">{t('items.heading')}</h1>
 
-      <form onSubmit={onSubmit} {...stylex.props(styles.form)}>
-        <Field xstyle={styles.grow}>
+      <form onSubmit={onSubmit} className="flex items-end gap-4">
+        <Field name="name" className="grow">
           <FieldLabel>{t('items.nameLabel')}</FieldLabel>
           <Input
-            name="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder={t('items.namePlaceholder')}
@@ -46,7 +41,7 @@ export function ItemsPage() {
           />
           <FieldError />
         </Field>
-        <Button type="submit" disabled={createItem.isPending} xstyle={styles.submit}>
+        <Button type="submit" disabled={createItem.isPending} data-variant="solid">
           {createItem.isPending ? t('items.adding') : t('items.add')}
         </Button>
       </form>
@@ -61,15 +56,13 @@ function ItemsList() {
   const items = useQuery(itemsQuery);
 
   if (items.isPending) {
-    return <output {...stylex.props(styles.muted)}>{t('items.loading')}</output>;
+    return <output className="text-muted">{t('items.loading')}</output>;
   }
   if (items.isError) {
     return (
-      <div role="alert" {...stylex.props(styles.error)}>
+      <div role="alert" className="flex items-center gap-4 text-error">
         <p>{t('items.loadError')}</p>
-        <Button variant="outline" onClick={() => items.refetch()}>
-          {t('items.retry')}
-        </Button>
+        <Button onClick={() => items.refetch()}>{t('items.retry')}</Button>
       </div>
     );
   }
@@ -77,36 +70,14 @@ function ItemsList() {
     return <EmptyState title={t('items.emptyTitle')} description={t('items.emptyBody')} />;
   }
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{tCount('items.count', items.data.items.length)}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul aria-label={t('items.heading')} {...stylex.props(styles.list)}>
-          {items.data.items.map((item) => (
-            <li key={item.id} {...stylex.props(styles.item)}>
-              {item.name}
-            </li>
-          ))}
-        </ul>
-      </CardContent>
+    <Card title={tCount('items.count', items.data.items.length)}>
+      <ul aria-label={t('items.heading')} className="divide-y divide-rule">
+        {items.data.items.map((item) => (
+          <li key={item.id} className="py-4">
+            {item.name}
+          </li>
+        ))}
+      </ul>
     </Card>
   );
 }
-
-const styles = stylex.create({
-  page: { display: 'flex', flexDirection: 'column', gap: space.xl },
-  heading: { margin: 0, fontSize: text.xxl, fontWeight: text.weightBold },
-  form: { display: 'flex', alignItems: 'flex-start', gap: space.md },
-  grow: { flexGrow: 1 },
-  submit: { marginTop: '1.625rem' },
-  muted: { color: colors.mutedForeground },
-  error: { display: 'flex', alignItems: 'center', gap: space.md, color: colors.danger },
-  list: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column' },
-  item: {
-    paddingBlock: space.md,
-    borderBottomWidth: { default: space.px, ':last-child': 0 },
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.border,
-  },
-});

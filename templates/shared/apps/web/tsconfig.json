@@ -4,5 +4,5 @@
     "types": ["@rsbuild/core/types"],
     "paths": { "@/*": ["./src/*"] }
   },
-  "include": ["src", "rsbuild.config.ts", "rstest.config.ts", "stylex.config.ts"]
+  "include": ["src", "rsbuild.config.ts", "rstest.config.ts"]
 }

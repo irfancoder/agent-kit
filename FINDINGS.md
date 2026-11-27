@@ -9,7 +9,7 @@ answers were read.
 
 | Question | Answer |
 | --- | --- |
-| Brand palette and type | None in agent-kit: projects start neutral (greys, system type, the 1.2 app scale) and set their own design language with the design-language skill (Hallmark). Values live in `registry/items/theme/tokens.css`. |
+| Brand palette and type | None in agent-kit: projects start neutral (greys, system type, the 1.2 app scale) and set their own design language with the design-language skill (Hallmark). Values live in the template's `apps/web/src/styles/tokens.css`. |
 | Default UI language | English and Bahasa Melayu from day one: `en.ts` (source of truth) and `ms.ts`, typed `t()` and `tCount()` (Intl.PluralRules). |
 | Cloudflare database | Both, chosen at scaffold time: `--db hyperdrive` (default: Postgres through Hyperdrive, same Kysely migrations as the Node variant) or `--db d1` (D1/SQLite with kysely-d1 and SQL migrations). |
 | SECURITY_CHECKLIST.md | A starter version is in `templates/shared/.agent/SECURITY_CHECKLIST.md`. Irfan supplies the final text. |
@@ -35,16 +35,40 @@ Docs: [Quickstart](https://e2e.com/docs/quickstart), [Cache](https://e2e.com/doc
 - **Telemetry switch:** `E2E_TELEMETRY_DISABLED=1` (set in the package scripts), or `npx e2e telemetry disable`.
 - **Browsers:** `pnpm --dir packages/e2e exec e2e-web install chromium` (about 100 MB, cached per machine).
 
-## StyleX toolchain
+## Components and styling: ui-sdk and Tailwind v4
 
-Docs: [Rsbuild CSS-in-JS](https://rsbuild.rs/guide/styling/css-in-js), [@stylexjs/unplugin](https://www.npmjs.com/package/@stylexjs/unplugin), [@stylexswc/unplugin](https://www.npmjs.com/package/@stylexswc/unplugin).
+Docs: [ui-sdk](https://ui-sdk.dev/docs) (also shipped in `node_modules/@ui-sdk/react/docs`), [Tailwind v4](https://tailwindcss.com/docs).
 
-- **Rsbuild plugin:** StyleX's own `@stylexjs/unplugin` (0.19), through its `rspack` adapter in `tools.rspack.plugins`. It now ships an Rspack adapter, so the third-party `unplugin-stylex` isn't needed. `@stylexjs/unplugin` uses Babel; `@stylexswc/unplugin` (Rust) is the faster option if builds get slow.
-- **Rstest:** Rstest is Rsbuild-based and takes the same `tools.rspack.plugins`, so `apps/web/stylex.config.ts` exports one plugin factory used by both `rsbuild.config.ts` and `rstest.config.ts`. Component tests render with real StyleX class names in happy-dom.
-- **Tokens:** `tokens.stylex.ts` uses `stylex.defineConsts` with `var(--…)` values that point at `tokens.css`. Constants compile straight into each rule, so there's one variable hop, themes work on any element, and nothing depends on the token module being loaded at runtime. (An earlier `defineVars` version hit a gotcha: StyleX drops the token import, so the bundler never loaded the file and its variable defaults never reached the CSS.)
-- **Light and dark:** each colour is one `light-dark()` declaration; `color-scheme` on `:root` follows the OS and `data-theme` pins it. Supported since Chrome 123, Safari 17.5 and Firefox 120.
-- **Gotcha found:** Rsbuild's `loadEnv` copies the whole `.env` into `process.env` by default, which leaked `NODE_ENV=development` into production builds. The config passes `processEnv: {}`.
-- **Oxlint and StyleX's lint rules:** works. Oxlint 1.95's `jsPlugins` loads `@stylexjs/eslint-plugin`; `valid-styles`, `no-unused`, `valid-shorthands` and `no-legacy-contextual-styles` run in the `react` preset. No gap.
+An earlier version used StyleX components on Base UI, from a private shadcn registry in
+this repo. After the Hallmark trial run they were replaced, for three reasons:
+Hallmark's linter reads plain CSS and Tailwind class strings but not `stylex.create`
+objects, so the Floor rules went unchecked in components; Hallmark's CSS had to be
+rewritten into StyleX by hand; and StyleX's compiler gotchas (dropped token imports,
+hashed cross-file constants) cost every run time.
+
+- **ui-sdk** (`@ui-sdk/react` + `@ui-sdk/core`, Apache-2.0, vercel-labs/ui), pinned at
+  `0.1.0-beta.17`: it's in beta and its APIs may change. It has its own behaviours (no
+  Base UI, Radix or React Aria), renders no styles, and imports one entry per component.
+  Its docs and an agent skill ship inside the package, matching the installed version.
+  Its agent bridge (`createAgent`, WebMCP) isn't wired in yet.
+- **Default look:** `@ui-sdk/core/web.css`, imported after Tailwind with
+  `layer(components)`, under `@layer ui-sdk;` declared first. It reads only `--ui-*`
+  variables, which `tokens.css` points at Hallmark's roles. Its focus ring is
+  `--ui-ring`, mapped to `--color-focus` (solid) so it clears 3:1.
+- **Tailwind v4** through `@tailwindcss/postcss` (Rsbuild picks up `postcss.config.mjs`).
+  `tokens.css` uses Hallmark's Tailwind layout (`@theme static` for colours, fonts, text,
+  radii, shadows and eases), with `--color-*: initial` so Tailwind's palette doesn't exist.
+  No `--spacing-*` names, as Hallmark advises.
+- **Colour scheme:** ui-sdk's `createColorScheme` writes `data-color-scheme` on `<html>`
+  (`system`, `light`, `dark`) and stores the choice in localStorage. `preferencesScript`
+  is injected into `index.html` by `rsbuild.config.ts`, so the saved scheme applies before
+  the first paint. Rsbuild's Lightning CSS rewrites `light-dark()` into its
+  `--lightningcss-light/dark` fallback and adds the matching variables to each
+  `color-scheme` rule, so switching works.
+- **Hallmark's linter on the neutral template:** it flags no stamp (added by the Hallmark
+  run) and no `:focus-visible`/`:active`/`:disabled` styling, because web.css is in
+  `node_modules`. The design-language skill restates those states in `global.css`.
+- **Gotcha:** ui-sdk's solid button is `data-variant="solid"`, not `primary`.
 
 ## Hallmark (design language)
 
@@ -60,8 +84,8 @@ Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at 
   fixed role names (`--color-paper`, `--color-ink`, `--color-accent`, `--font-body`,
   `--text-*`, `--space-*`, …). Its rule for an existing project is to map onto the
   project's token names, not add a parallel set. So the template's `tokens.css` uses
-  Hallmark's names, and `tokens.stylex.ts` points StyleX vars at them. A Hallmark run
-  replaces values in one file and the StyleX components follow.
+  Hallmark's names and its Tailwind v4 layout, and maps ui-sdk's `--ui-*` variables onto
+  them. A Hallmark run replaces values in one file and everything follows.
 - **Locking:** "lock the system" writes `DESIGN.md` at the repo root. Hallmark's
   pre-flight treats a root `DESIGN.md` as locked and makes every later run follow it.
   That is why the template keeps its own rubric in `.agent/DESIGN.md` and ships no root
@@ -86,8 +110,8 @@ Ink asks). DESIGN.md was locked and the commit passed pre-commit. What it change
 the template:
 
 - **`data-slot` clash:** Hallmark's `base.css` styles every `[data-slot]` as a photo
-  slot, but shadcn-style components put `data-slot` on every part. The skill now
-  deletes those rules.
+  slot, but the components (shadcn-style then, ui-sdk now) put `data-slot` on every
+  part. The skill deletes those rules.
 - **Primary colour:** Hallmark's `--color-accent` is a signal colour, but Ink's primary
   button is ink-filled. Components now paint primary actions with a
   `--color-primary` role, which defaults to the accent.
@@ -100,14 +124,6 @@ the template:
 - **Not run:** Hallmark's render tier (screenshots, contrast in the browser) needs
   `npm i -g puppeteer-core` and Chrome. I checked both themes in a browser by hand
   instead.
-
-## shadcn without Tailwind
-
-Docs: [Registry](https://ui.shadcn.com/docs/registry), [Namespaces](https://ui.shadcn.com/docs/registry/namespace), [Authentication](https://ui.shadcn.com/docs/registry/authentication), [components.json](https://ui.shadcn.com/docs/components-json).
-
-- **No Tailwind installed:** `shadcn add` works. `components.json` still needs a `tailwind` block, so it has one with an empty `config` and `cssVariables: false`; registry items carry no `cssVars` or Tailwind config, so nothing Tailwind is written or installed.
-- **Private registry:** `components.json` declares `@irfancoder` with `url: ${IRFANCODER_REGISTRY_URL}/{name}.json` and two headers: `Authorization: Bearer ${IRFANCODER_REGISTRY_TOKEN}` and `Accept: application/vnd.github.raw+json`. shadcn expands `${VAR}` from the environment and refuses to run if one is empty. The built JSON is committed in `registry/public/r` and read through GitHub's [contents API](https://docs.github.com/en/rest/repos/contents) (`https://api.github.com/repos/irfancoder/agent-kit/contents/registry/public/r`, default branch), which returns the raw file for a token that can read the repo. `raw.githubusercontent.com` returned 404 for the private repo with the same token, so it isn't used. `scripts/add-starter-components.sh` falls back to `gh auth token`.
-- **Registry dependencies:** items list `@irfancoder/theme` etc. as `registryDependencies`. They list no npm `dependencies`: the template already has `@base-ui/react` and `@stylexjs/stylex` in its catalog, and letting shadcn run `pnpm add` would bypass the catalog.
 
 ## lefthook
 

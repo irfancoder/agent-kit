@@ -11,14 +11,18 @@ locks it so every later screen shares it.
 
 ## How the styling is wired
 
-- `apps/web/src/styles/tokens.css` holds every value, in **Hallmark's token names**
-  (`--color-paper`, `--color-ink`, `--color-accent`, `--font-body`, `--text-*`,
-  `--space-*`, `--radius-card`, …). Each colour is written once as
-  `light-dark(<light>, <dark>)`; the OS picks one and `data-theme` pins it.
-- `apps/web/src/styles/tokens.stylex.ts` only points StyleX at those variables.
-  Components (`src/components/ui`) read StyleX tokens and never a raw value.
-- So **a new design language is a new `tokens.css`**. Components and pages follow
-  without edits.
+- Components come from [ui-sdk](https://ui-sdk.dev) (`@ui-sdk/react/<component>`). They
+  render no styles; `@ui-sdk/core/web.css` gives them their default look, and it reads
+  only `--ui-*` variables.
+- `apps/web/src/styles/tokens.css` holds every value, in **Hallmark's token names and its
+  Tailwind v4 layout**: colours, fonts, text sizes, radii, shadows and eases in
+  `@theme static` (so each is a utility: `bg-paper`, `text-ink`, `rounded-card`), the
+  rest in `:root`. Each colour is one `light-dark(<light>, <dark>)`; `data-color-scheme`
+  on `<html>` picks one. The same file points ui-sdk's `--ui-*` variables at the roles.
+- Pages and features style with Tailwind utilities on those names. Tailwind's own palette
+  is switched off (`--color-*: initial`), so `bg-zinc-100` doesn't exist.
+- So **a new design language is a new `tokens.css`**. web.css, the components and the
+  pages follow without edits.
 
 ## Before you start
 
@@ -48,13 +52,17 @@ defaults:
 - **Tokens go in `apps/web/src/styles/tokens.css`**, keeping its names and structure:
   - every colour as one `light-dark(<light>, <dark>)` declaration (Hallmark's light and
     dark values side by side), and the derived colours and shadows that build on them;
+  - `--color-*: initial` first in `@theme static`, so Tailwind's palette stays off;
   - the project's extra tokens (`--color-paper-2/3`, `--color-error-ink`,
-    `--shadow-color`, `--radius-inner`, `--radius-control`, `--control*`, `--weight-*`,
-    `--leading-*`).
+    `--color-control-edge`, `--shadow-color`, `--radius-inner`, `--radius-control`,
+    `--weight-*`, `--leading-*`);
+  - the `--ui-*` block, which maps ui-sdk onto the roles. Change what a `--ui-*` points
+    at (say `--ui-radius: var(--radius-pill)` for a pill theme), never give it a raw value.
 
   Run Hallmark's scaffold into a side folder
   (`theme.mjs scaffold <slug> --scope app --dealt "…" --dir .hallmark/scaffold`), then
   merge its values into the existing `tokens.css` rather than keeping two token sets.
+  Both use Hallmark's Tailwind layout, so it's a value-for-value merge.
   A light-only theme needs dark values: derive them with Hallmark's
   `references/dark-mode.md` recipe (hue never moves, paper 12–18% L, ink stays the
   theme's chroma). Delete `.hallmark/scaffold` afterwards.
@@ -62,21 +70,24 @@ defaults:
 - **The primary action's colour is `--color-primary`** (default: the accent). If the
   theme's primary button isn't the accent (Ink's is ink-filled), set
   `--color-primary: var(--color-ink)` and `--color-primary-ink: var(--color-paper)`.
-  Buttons, checked boxes and switches follow it.
+  Solid buttons (`data-variant="solid"`), checked boxes and switches follow it.
 - **`base.css`:** copy Hallmark's `base.css` to `apps/web/src/styles/base.css` and
-  import it in `global.css` right after `tokens.css`, but **delete its `[data-slot]`
-  rules** (the photo-slot rules and the "photographs" filter). The components use
-  `data-slot` as a part name, and those rules would give every button and field a
-  gradient background and `overflow: hidden`. App screens have no photo slots.
+  import it in `global.css` right after `tokens.css`, as `@import './base.css' layer(base);`
+  (unlayered, its element rules would beat every utility). **Delete its `[data-slot]`
+  rules** (the photo-slot rules and the "photographs" filter): ui-sdk puts `data-slot`
+  on every part, and those rules would give every button and field a gradient
+  background and `overflow: hidden`. App screens have no photo slots.
 - **The stamp** goes at the top of `apps/web/src/styles/global.css`, before the
   `@import` lines. Waivers sit under it, in the exact form
   `/* Hallmark · waive <gate> · <evidence> · <reason> */`; sloplint rejects a reason
   that shares no word with the page.
 
-- **Styling is StyleX.** No Tailwind, no new CSS files for components. A look that tokens
-  can't express (a different control shape, say) changes the component in the
-  IRFANCODER registry (agent-kit/registry), not a local copy. Record the request in
-  `.agent/DECISIONS.md`.
+- **Styling is Tailwind utilities on the token names**, plus web.css. A look that tokens
+  can't express (a different control shape, say) goes in `global.css`, in
+  `@layer components`, selecting ui-sdk's `data-slot` and state attributes
+  (`[data-slot="button"][data-pressed]`). Never `!important`, never a raw value, never
+  generated ids. ui-sdk's own skill (`node_modules/@ui-sdk/core/skills/ui-sdk/SKILL.md`,
+  then `references/styles.md`) lists the slots, the icons web.css draws and the sizes it sets.
 - **Fonts:** self-host them, never a font CDN link. The simplest way is the
   `@fontsource/<family>` package (pin it in the pnpm catalog) imported per weight in
   `global.css`, for example `@import '@fontsource/epilogue/700.css';`. Record the
@@ -89,9 +100,12 @@ defaults:
 1. Hallmark's sweep, against the running app:
    `node ~/.claude/skills/hallmark/scripts/sloplint.mjs apps/web/src --genre <genre> --scope app --render --url http://127.0.0.1:3000/`
    Fix every FAIL; fix or waive (with a reason) every REFLEX. Findings in
-   `__tests__/` files are test fixtures, not UI: dismiss them. Without puppeteer-core
+   `__tests__/` files are test fixtures, not UI: dismiss them. The static tier can't see
+   web.css (it's in `node_modules`), so it reports no `:focus-visible`, `:active` or
+   `:disabled` styling: restate the focus ring, pressed and disabled states for
+   `[data-slot]` in `global.css` from the tokens, rather than waiving them. Without puppeteer-core
    and Chrome only the static tier runs; say so, and never claim a render pass.
-2. Screenshot the main screen in light and dark (`document.documentElement.dataset.theme`),
+2. Screenshot the main screen in light and dark (`colorScheme.set('light' | 'dark')`, or `data-color-scheme` on `<html>`),
    and score both against the rubric in `.agent/DESIGN.md`. Below 7 on any criterion: revise.
 3. The repo's hooks: `pnpm exec lefthook run pre-commit --all-files` and `pnpm e2e --strict-cache`.
 

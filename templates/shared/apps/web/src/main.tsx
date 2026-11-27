@@ -1,14 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createRouter, RouterProvider } from '@tanstack/react-router';
+import { Preferences } from '@ui-sdk/react/preferences';
+import { ToastRegion } from '@ui-sdk/react/toast';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ToastProvider } from '@/components/ui/toast';
 import { I18nProvider } from '@/i18n/index.tsx';
-import { initTheme } from '@/lib/theme.ts';
+import { colorScheme } from '@/lib/color-scheme.ts';
 import { routeTree } from './routeTree.gen.ts';
 import './styles/global.css';
-// StyleX drops token imports once compiled; this keeps the token file in the bundle.
-import '@/styles/tokens.stylex';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 10_000 } },
@@ -22,19 +21,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
-initTheme();
-
 const root = document.getElementById('root');
 if (!root) throw new Error('#root is missing from index.html');
 
 createRoot(root).render(
   <StrictMode>
-    <I18nProvider>
-      <QueryClientProvider client={queryClient}>
-        <ToastProvider>
+    <Preferences preferences={[colorScheme]}>
+      <I18nProvider>
+        <QueryClientProvider client={queryClient}>
           <RouterProvider router={router} />
-        </ToastProvider>
-      </QueryClientProvider>
-    </I18nProvider>
+        </QueryClientProvider>
+      </I18nProvider>
+      <ToastRegion />
+    </Preferences>
   </StrictMode>,
 );

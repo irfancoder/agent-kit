@@ -4,17 +4,16 @@ Guide for people and agents working in this repo. Scaffolded by agent-kit.
 
 ## Layout
 
-| Path                                          | What it is                                                                              |
-| --------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `apps/web`                                    | React 19 SPA: Rsbuild, TanStack Router (file-based, `src/routes`) and Query, ky, StyleX |
-| `apps/web/src/components/ui`                  | Components from the IRFANCODER shadcn registry (StyleX on Base UI)                      |
-| `apps/web/src/styles/tokens.css`              | Design tokens (Hallmark's names); `tokens.stylex.ts` points StyleX at them              |
-| `apps/web/src/i18n`                           | Typed `t()` messages: `en.ts` (source of truth) and `ms.ts`                             |
-| `apps/api`                                    | The api (see `apps/api/src/app.ts`), with Valibot validation, Pino logs, Kysely         |
-| `packages/contracts`                          | Valibot schemas and the one route map shared by web and api; generates `/openapi.json`  |
-| `packages/e2e`                                | e2e tests (`tests/*.e2e.ts`) and the committed replay cache (`.e2e/cache`)              |
-| `packages/tsconfig`, `packages/oxlint-config` | Shared presets                                                                          |
-| `.agent/`                                     | Agent-team coordination files (see below)                                               |
+| Path                                          | What it is                                                                                           |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `apps/web`                                    | React 19 SPA: Rsbuild, TanStack Router (file-based, `src/routes`) and Query, ky, ui-sdk, Tailwind v4 |
+| `apps/web/src/styles/tokens.css`              | Design tokens (Hallmark's names), Tailwind utilities, and ui-sdk's `--ui-*` mapping                  |
+| `apps/web/src/i18n`                           | Typed `t()` messages: `en.ts` (source of truth) and `ms.ts`                                          |
+| `apps/api`                                    | The api (see `apps/api/src/app.ts`), with Valibot validation, Pino logs, Kysely                      |
+| `packages/contracts`                          | Valibot schemas and the one route map shared by web and api; generates `/openapi.json`               |
+| `packages/e2e`                                | e2e tests (`tests/*.e2e.ts`) and the committed replay cache (`.e2e/cache`)                           |
+| `packages/tsconfig`, `packages/oxlint-config` | Shared presets                                                                                       |
+| `.agent/`                                     | Agent-team coordination files (see below)                                                            |
 
 ## Commands
 
@@ -37,7 +36,7 @@ API docs: http://127.0.0.1:3001/docs (Scalar) and `/openapi.json`.
 - **Errors:** every api error has the shape `{ "error": { "code", "message", "details"? } }`.
 - **Env:** a new env var goes into the env schema (`apps/api/src/env.ts`) and `.env.example`. The api refuses to start on a missing or bad value.
 - **Design language:** set once with the `design-language` skill (Hallmark), locked in `DESIGN.md` at the root. The Planner schedules it before any UI feature; after that, every UI ticket follows `DESIGN.md`.
-- **UI:** StyleX only, values from the tokens, components from `@/components/ui`. Need another component? `pnpm --dir apps/web exec shadcn add @irfancoder/<name>`. If the registry lacks it, add it to the registry rather than copying it between projects. Read `.agent/DESIGN.md` first.
+- **UI:** components from [ui-sdk](https://ui-sdk.dev), one entry each (`import { Select } from '@ui-sdk/react/select'`); its docs for the installed version are in `node_modules/@ui-sdk/react/docs` (start at `llms.txt`), and its skill at `node_modules/@ui-sdk/core/skills/ui-sdk/SKILL.md`. Style with Tailwind utilities on the token names (`bg-paper`, `text-muted`, `rounded-card`) and ui-sdk's state attributes (`data-open:`, `aria-pressed:`); there is no Tailwind palette, no raw values and no `dark:` variant (colours are `light-dark()` tokens). Shared app pieces ui-sdk doesn't ship (`Card`, `EmptyState`) live in `src/components`; reuse them rather than repeating their classes. Name every control. Read `.agent/DESIGN.md` first.
 - **Copy:** user-facing text goes through `t()`; add the key to `en.ts` and `ms.ts`.
 - **Database:** Kysely, no ORM. Add a migration file and list it in the migrations map; migrations run on boot.
 

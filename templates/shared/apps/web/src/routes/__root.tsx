@@ -1,10 +1,9 @@
-import * as stylex from '@stylexjs/stylex';
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Link, Outlet } from '@tanstack/react-router';
-import { Button } from '@/components/ui/button';
+import { usePreference } from '@ui-sdk/react/preferences';
+import { Toggle, ToggleGroup } from '@ui-sdk/react/toggle';
 import { locales, localeNames, useI18n, type Locale } from '@/i18n/index.tsx';
-import { toggleTheme } from '@/lib/theme.ts';
-import { colors, fonts, space, text } from '@/styles/tokens.stylex';
+import { colorScheme } from '@/lib/color-scheme.ts';
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   component: RootLayout,
@@ -12,66 +11,37 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootLayout() {
   const { t, locale, setLocale } = useI18n();
+  const { resolved } = usePreference(colorScheme);
   return (
-    <div {...stylex.props(styles.shell)}>
-      <header {...stylex.props(styles.header)}>
-        <Link to="/" {...stylex.props(styles.brand)}>
+    <div className="min-h-screen">
+      <header className="flex items-center justify-between gap-6 border-b border-rule px-10 py-4">
+        <Link to="/" className="text-lg font-bold text-ink no-underline">
           {t('app.title')}
         </Link>
-        <nav aria-label={t('nav.language')} {...stylex.props(styles.actions)}>
-          {(Object.keys(locales) as Locale[]).map((l) => (
-            <Button
-              key={l}
-              size="sm"
-              variant={l === locale ? 'secondary' : 'ghost'}
-              aria-pressed={l === locale}
-              lang={l}
-              onClick={() => setLocale(l)}
-            >
-              {localeNames[l]}
-            </Button>
-          ))}
-          <Button size="sm" variant="outline" onClick={toggleTheme}>
-            {t('theme.toggle')}
-          </Button>
-        </nav>
+        <div className="flex items-center gap-4">
+          <ToggleGroup
+            aria-label={t('nav.language')}
+            value={[locale]}
+            deselectable={false}
+            onValueChange={([next]) => next && setLocale(next as Locale)}
+          >
+            {(Object.keys(locales) as Locale[]).map((l) => (
+              <Toggle key={l} value={l} lang={l}>
+                {localeNames[l]}
+              </Toggle>
+            ))}
+          </ToggleGroup>
+          <Toggle
+            pressed={resolved === 'dark'}
+            onPressedChange={(dark) => colorScheme.set(dark ? 'dark' : 'light')}
+          >
+            {t('theme.dark')}
+          </Toggle>
+        </div>
       </header>
-      <main {...stylex.props(styles.main)}>
+      <main className="mx-auto max-w-176 px-10 py-16">
         <Outlet />
       </main>
     </div>
   );
 }
-
-const styles = stylex.create({
-  shell: {
-    minHeight: '100vh',
-    fontFamily: fonts.sans,
-    color: colors.foreground,
-    backgroundColor: colors.background,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: space.lg,
-    paddingBlock: space.md,
-    paddingInline: space.xl,
-    borderBottomWidth: space.px,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.border,
-  },
-  brand: {
-    fontSize: text.lg,
-    fontWeight: text.weightBold,
-    color: colors.foreground,
-    textDecoration: 'none',
-  },
-  actions: { display: 'flex', alignItems: 'center', gap: space.xs },
-  main: {
-    maxWidth: '44rem',
-    marginInline: 'auto',
-    paddingBlock: space.xxl,
-    paddingInline: space.xl,
-  },
-});

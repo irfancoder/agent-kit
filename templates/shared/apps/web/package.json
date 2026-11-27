@@ -11,11 +11,11 @@
     "test": "rstest run"
   },
   "dependencies": {
-    "@base-ui/react": "catalog:",
     "@kitapp/contracts": "workspace:*",
-    "@stylexjs/stylex": "catalog:",
     "@tanstack/react-query": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "@ui-sdk/core": "catalog:",
+    "@ui-sdk/react": "catalog:",
     "ky": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
@@ -26,15 +26,14 @@
     "@rsbuild/core": "catalog:",
     "@rsbuild/plugin-react": "catalog:",
     "@rstest/core": "catalog:",
-    "@stylexjs/eslint-plugin": "catalog:",
-    "@stylexjs/unplugin": "catalog:",
+    "@tailwindcss/postcss": "catalog:",
     "@tanstack/router-plugin": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/react": "catalog:",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
     "happy-dom": "catalog:",
-    "shadcn": "catalog:",
+    "tailwindcss": "catalog:",
     "typescript": "catalog:"
   }
 }

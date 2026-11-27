@@ -72,8 +72,6 @@ cd "$DIR"
 cp .env.example .env
 git init -q -b main
 pnpm install
-echo "Installing the starter components from the IRFANCODER registry"
-./scripts/add-starter-components.sh
 pnpm exec oxfmt >/dev/null
 git add -A
 git commit -q -m "chore: scaffold via agent-kit $KIT_VERSION"

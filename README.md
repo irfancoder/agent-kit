@@ -22,20 +22,16 @@ doesn't use, copy or link to any MOF code or assets.
 | `--db` | `hyperdrive` | `hono-cloudflare` only: `hyperdrive` (Postgres) or `d1` |
 
 The script copies the template, replaces the `kitapp` / `@kitapp` / `Kit App`
-placeholders in file contents and paths, installs dependencies, installs the
-starter components from the IRFANCODER registry, and makes one commit,
-`chore: scaffold via agent-kit <version>`, through the pre-commit hook.
-
-It reads the private component registry through the GitHub API, so it needs
-`IRFANCODER_REGISTRY_TOKEN` (a GitHub token that can read this repo) or a
-`gh` login. Then, in the new project:
+placeholders in file contents and paths, installs dependencies, and makes one
+commit, `chore: scaffold via agent-kit <version>`, through the pre-commit hook.
+Then, in the new project:
 
 ```bash
 ./.agent/init.sh
 pnpm --dir packages/e2e exec e2e-web install chromium   # once per machine
 ```
 
-Requirements: Node.js 24.8+, pnpm 12, git, Docker (for Postgres), rsync, python3 (selftest).
+Requirements: Node.js 24.8+, pnpm 12, git, Docker (for Postgres), rsync.
 
 ## Design language
 
@@ -51,8 +47,8 @@ Install Hallmark once per machine, at the version agent-kit pins:
 ```
 
 Every value lives in the project's `apps/web/src/styles/tokens.css`, in Hallmark's token
-names; `tokens.stylex.ts` points StyleX at them. A new design language is therefore a new
-`tokens.css`, and components don't change. To move to a newer Hallmark, change
+names and its Tailwind v4 layout. The same file points ui-sdk's `--ui-*` variables at those
+roles. A new design language is therefore a new `tokens.css`, and components don't change. To move to a newer Hallmark, change
 `HALLMARK_PIN` in the script on purpose, as you would bump a dependency.
 
 ## Variants
@@ -68,10 +64,10 @@ No variant has deploy scripts or real credentials: agents never deploy.
 ## What a project gets
 
 - pnpm workspace with catalogs (every third-party version pinned once), Turborepo, Renovate
-- `apps/web`: React 19, Rsbuild, TanStack Router + Query, ky, StyleX, typed `t()` in English and Bahasa Melayu
+- `apps/web`: React 19, Rsbuild, TanStack Router + Query, ky, [ui-sdk](https://ui-sdk.dev) components styled with Tailwind v4, typed `t()` in English and Bahasa Melayu
 - `apps/api`: the variant's api, validated against `packages/contracts` (Valibot), which also generates the OpenAPI document
 - `packages/e2e`: e2e tests (agent steps + `expect` assertions) with a committed replay cache
-- Oxlint (with StyleX's lint rules) + oxfmt, Rstest, lefthook (pre-commit: format, lint, `.agent/` check, types, unit tests; pre-push: e2e with `--strict-cache`)
+- Oxlint + oxfmt, Rstest, lefthook (pre-commit: format, lint, `.agent/` check, types, unit tests; pre-push: e2e with `--strict-cache`)
 - `AGENTS.md`, `.agent/` coordination files, `DESIGN.md` with the design rubric, `SECURITY_CHECKLIST.md`
 - The `design-language` skill (Hallmark) and design tokens in Hallmark's names
 
@@ -83,21 +79,18 @@ No variant has deploy scripts or real credentials: agents never deploy.
 | `templates/shared/` | Files every variant gets |
 | `templates/node-postgres/base/` | The Fastify api, docker-compose, e2e serve script, `init.sh` |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
-| `registry/` | The IRFANCODER shadcn registry: StyleX components on Base UI (source in `items/`, built JSON in `public/r/`) |
 | `scripts/record-e2e-cache.sh` | Records the e2e replay cache that ships in the template |
 | `scripts/install-hallmark.sh` | Installs the Hallmark design skill at a pinned commit |
 | `FINDINGS.md` | Research behind the tool choices |
 
 ## Updating the template
 
-1. Change files under `templates/` or `registry/items/`. Templates must stay valid as they are:
+1. Change files under `templates/`. Templates must stay valid as they are:
    the `kitapp` placeholder is a real package name, so don't use `__NAME__`-style tokens.
-2. Registry changes: list new items in `registry/registry.json`, then `pnpm --dir registry build`
-   and commit `registry/public/r`. Keep `registry/LICENSE-shadcn.md`.
-3. If the example UI or the e2e tests changed, re-record the replay cache:
+2. If the example UI or the e2e tests changed, re-record the replay cache:
    `ANTHROPIC_API_KEY=… ./scripts/record-e2e-cache.sh`, and commit
    `templates/shared/packages/e2e/.e2e/cache`.
-4. Run `./selftest.sh`. It must pass before an update is merged. It scaffolds every
-   variant against this checkout's registry, runs both hooks with no model
+3. Run `./selftest.sh`. It must pass before an update is merged. It scaffolds every
+   variant, runs both hooks with no model
    credentials, and fails on any leftover placeholder.
-5. Bump `VERSION`.
+4. Bump `VERSION`.

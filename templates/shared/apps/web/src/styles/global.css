@@ -1,23 +1,22 @@
-/* Design tokens first (Hallmark's names; the design-language skill rewrites them). */
+/* ui-sdk's behaviour CSS goes in this layer; declared first so every other style wins. */
+@layer ui-sdk;
+
+@import 'tailwindcss';
+/* ui-sdk's default look, above Tailwind's base styles and below its utilities. */
+@import '@ui-sdk/core/web.css' layer(components);
+/* Design tokens (Hallmark's names; the design-language skill rewrites them). */
 @import './tokens.css';
 
-/* Base reset. All component styling is StyleX; this file also receives StyleX's compiled CSS. */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-html,
-body {
-  margin: 0;
-}
-body {
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-button,
-input,
-textarea,
-select {
-  font: inherit;
+@layer base {
+  html,
+  body {
+    overflow-x: clip;
+  }
+  body {
+    min-height: 100vh;
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
 }

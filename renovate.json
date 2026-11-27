@@ -34,14 +34,14 @@
       "groupName": "e2e"
     },
     {
-      "description": "StyleX packages move together",
+      "description": "ui-sdk packages move together",
       "matchPackageNames": [
-        "@stylexjs/**"
+        "@ui-sdk/**"
       ],
-      "groupName": "stylex"
+      "groupName": "ui-sdk"
     }
   ],
-  "description": "agent-kit itself: the template catalogs (templates/*/pnpm-workspace.yaml), template package.json files and the registry. Generated projects carry their own renovate.json.",
+  "description": "agent-kit itself: the template catalogs (templates/*/pnpm-workspace.yaml) and template package.json files. Generated projects carry their own renovate.json.",
   "ignorePaths": [
     "**/node_modules/**"
   ]

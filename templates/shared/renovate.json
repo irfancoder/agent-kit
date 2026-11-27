@@ -17,9 +17,9 @@
       "groupName": "e2e"
     },
     {
-      "description": "StyleX packages move together",
-      "matchPackageNames": ["@stylexjs/**"],
-      "groupName": "stylex"
+      "description": "ui-sdk packages move together",
+      "matchPackageNames": ["@ui-sdk/**"],
+      "groupName": "ui-sdk"
     }
   ]
 }

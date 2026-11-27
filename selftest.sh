@@ -5,8 +5,7 @@
 #   ./selftest.sh                       # all variants
 #   ./selftest.sh node-postgres         # one variant (hono-cloudflare:d1 picks a db)
 #
-# Uses this checkout's registry (built and served locally), not the published one.
-# Needs: git, pnpm, node, docker (running), python3, and the e2e browsers
+# Needs: git, pnpm, node, docker (running), and the e2e browsers
 # (pnpm --dir <project>/packages/e2e exec e2e-web install chromium).
 set -euo pipefail
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,10 +13,8 @@ VARIANTS=("$@")
 [[ ${#VARIANTS[@]} -gt 0 ]] || VARIANTS=(node-postgres hono-cloudflare:hyperdrive hono-cloudflare:d1)
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/agent-kit-selftest.XXXXXX")"
-SERVER_PID=""
 PROJECTS=()
 cleanup() {
-  [[ -z "$SERVER_PID" ]] || kill "$SERVER_PID" 2>/dev/null || true
   for p in "${PROJECTS[@]}"; do
     [[ -f "$p/docker-compose.yml" ]] && (cd "$p" && docker compose down -v >/dev/null 2>&1 || true)
   done
@@ -27,12 +24,6 @@ trap cleanup EXIT
 
 free_port() { node -e "const s=require('net').createServer();s.listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})"; }
 
-echo "==> Building the registry"
-(cd "$KIT_DIR/registry" && pnpm install --frozen-lockfile >/dev/null && pnpm build >/dev/null)
-REG_PORT="$(free_port)"
-python3 -m http.server "$REG_PORT" --bind 127.0.0.1 --directory "$KIT_DIR/registry/public/r" >/dev/null 2>&1 &
-SERVER_PID=$!
-export IRFANCODER_REGISTRY_URL="http://127.0.0.1:$REG_PORT" IRFANCODER_REGISTRY_TOKEN=selftest
 # Hooks must pass with no model credentials.
 unset ANTHROPIC_API_KEY E2E_AGENT
 
