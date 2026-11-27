@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Started by the e2e runner (app.command in e2e.config.ts) with the web port it picked.
-# Resets the e2e database on the Postgres in DATABASE_URL, starts the api on a free port,
-# then the web dev server in front of it. The runner stops this script when the run ends;
-# the trap stops the api with it.
+# Gives the api a fresh database, starts it on a free port, then the web dev server in
+# front of it. The runner stops this script when the run ends; the trap stops the api
+# with it.
 set -euo pipefail
 E2E_WEB_PORT="${1:?usage: serve.sh <web-port>}"
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -10,15 +10,17 @@ cd "$ROOT"
 
 # Settings from .env (copied from .env.example on scaffold), if present.
 if [[ -f .env ]]; then set -a; source .env; set +a; fi
-: "${DATABASE_URL:?serve.sh: set DATABASE_URL in .env to a Postgres you provide}"
-DATABASE_URL="$(node apps/api/scripts/e2e-db.ts "$DATABASE_URL")"
+# A scratch dir for this run, removed when it ends.
+STATE="$(mktemp -d)"
+# The database layer's hook exports a fresh database for this run.
+source packages/e2e/scripts/db-env.sh
 
 free_port() { node -e "const s=require('net').createServer();s.listen(0,'127.0.0.1',()=>{console.log(s.address().port);s.close()})"; }
 API_PORT="$(free_port)"
-export HOST=127.0.0.1 PORT="$API_PORT" LOG_LEVEL=warn DATABASE_URL
+export HOST=127.0.0.1 PORT="$API_PORT" LOG_LEVEL=warn
 
 PIDS=()
-stop() { kill "${PIDS[@]}" 2>/dev/null || true; }
+stop() { kill "${PIDS[@]}" 2>/dev/null || true; rm -rf "$STATE"; }
 trap stop EXIT
 trap 'stop; exit 143' INT TERM
 

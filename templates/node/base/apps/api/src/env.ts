@@ -1,7 +1,11 @@
 import * as v from 'valibot';
+import { dbEnv } from './db/env.ts';
 import { parseEnvWith } from './validate.ts';
 
-/** Every env var the api reads. A new one goes here and in .env.example. */
+/**
+ * Every env var the api reads. A new one goes here (or, for the database, in
+ * db/env.ts) and in .env.example.
+ */
 export const EnvSchema = v.object({
   NODE_ENV: v.optional(v.picklist(['development', 'test', 'production']), 'development'),
   HOST: v.optional(v.string(), '127.0.0.1'),
@@ -10,10 +14,7 @@ export const EnvSchema = v.object({
     v.picklist(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']),
     'info',
   ),
-  DATABASE_URL: v.pipe(
-    v.string('DATABASE_URL is required'),
-    v.url('DATABASE_URL must be a URL, for example postgres://user:pass@localhost:5432/db'),
-  ),
+  ...dbEnv,
 });
 export type Env = v.InferOutput<typeof EnvSchema>;
 

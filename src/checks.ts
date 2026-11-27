@@ -1,14 +1,15 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { dbEnvVar, type Options } from './options.ts';
+import { dbEnvVar, type Options, VARIANT_LAYERS } from './options.ts';
 import { E2E_CACHE, fail, KIT_DIR, output, warn } from './util.ts';
 
 /** Paths of the template layers for these options, in copy order. */
 export function layers(o: Options): string[] {
+  const { stack, db = o.db } = VARIANT_LAYERS[o.variant];
   return [
     join(KIT_DIR, 'templates/shared'),
-    join(KIT_DIR, 'templates', o.variant, 'base'),
-    ...(o.db ? [join(KIT_DIR, 'templates', o.variant, `db-${o.db}`)] : []),
+    join(KIT_DIR, 'templates', stack, 'base'),
+    ...(db ? [join(KIT_DIR, 'templates', stack, `db-${db}`)] : []),
     join(KIT_DIR, 'templates/ui', o.ui ?? ''),
   ];
 }

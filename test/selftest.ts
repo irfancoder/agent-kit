@@ -20,9 +20,9 @@ import { E2E_CACHE, KIT_DIR } from '../src/util.ts';
 
 const variants = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : ['node-postgres', 'hono-cloudflare:hyperdrive+ui-sdk', 'hono-cloudflare:d1'];
-// Every variant but D1 uses Postgres.
-if (!process.env.DATABASE_URL && variants.some((spec) => !spec.includes(':d1'))) {
+  : ['node-postgres', 'node-sqlite', 'hono-cloudflare:hyperdrive+ui-sdk', 'hono-cloudflare:d1'];
+// Every variant but SQLite and D1 uses Postgres.
+if (!process.env.DATABASE_URL && variants.some((spec) => !/node-sqlite|:d1/.test(spec))) {
   console.log('selftest: set DATABASE_URL to a Postgres you run (see the top of test/selftest.ts)');
   process.exit(1);
 }

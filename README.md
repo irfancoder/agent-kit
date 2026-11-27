@@ -45,7 +45,7 @@ Every machine or bot environment that runs it needs:
 | pnpm | 12 | Fetches and runs the CLI; workspaces and the catalog in projects |
 | git | any recent | pnpm fetches the CLI with it; it makes the project's first commit |
 | gh | signed in (only for `--github`) | Creates the project's private repo and its first issue |
-| Postgres | a URL in `DATABASE_URL` (not for `--db d1`) | The project's database. You provide it: a local install, a container or a hosted database. Its role needs `CREATEDB`, for the e2e database. Required with `--github`, since the first push runs e2e |
+| Postgres | a URL in `DATABASE_URL` (not for `node-sqlite` or `--db d1`) | The project's database. You provide it: a local install, a container or a hosted database. Its role needs `CREATEDB`, for the e2e database. Required with `--github`, since the first push runs e2e |
 | Claude Code | signed in with `claude` | Records e2e agent steps, on your Claude Max plan |
 
 **In Rakazo,** add two skills to the bot's skill list:
@@ -94,7 +94,7 @@ agent-kit [dir] [options]
 
   --name <name>            Project name in kebab-case (defaults to the folder name)
   --title <title>          Display name (defaults to the name in Title Case)
-  --variant <variant>      node-postgres (default) or hono-cloudflare
+  --variant <variant>      node-postgres (default), node-sqlite or hono-cloudflare
   --db <db>                hono-cloudflare only: hyperdrive (default) or d1
   --ui <library>           Headless components: base-ui (default, stable) or ui-sdk (beta)
   --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
@@ -140,7 +140,9 @@ safe to run again; it reuses whatever is already running. Then open:
 
 To stop the dev servers: `kill $(cat .agent/logs/dev.pid)`.
 
-agent-kit never starts a database. The Postgres variants read its URL from `.env`:
+`node-sqlite` keeps its database in a file (`DATABASE_PATH` in `.env`) and needs nothing
+running; e2e runs use a fresh file in a temp dir. agent-kit never starts a Postgres. The
+Postgres variants read its URL from `.env`:
 `DATABASE_URL` for `node-postgres`,
 `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` for `--db hyperdrive`, where
 Wrangler requires a password in the URL. The e2e tests drop and recreate `<database>_e2e` on the same server on each run.
@@ -257,13 +259,13 @@ Try a design run on a scratch project first, then update the tested version abov
 
 ## Variants
 
-| | `node-postgres` (default) | `hono-cloudflare --db hyperdrive` | `hono-cloudflare --db d1` |
-| --- | --- | --- | --- |
-| Pick it for | A Node server you host yourself | Cloudflare Workers with Postgres | Cloudflare Workers with SQLite |
-| API | Fastify 5, Pino | Hono on Workers (`wrangler dev`) | same |
-| Database | Postgres (yours, from `DATABASE_URL`), Kysely, migrations on boot | Postgres through Hyperdrive, same Kysely migrations, run on the first request | D1, kysely-d1, SQL migrations applied before `wrangler dev` |
+| | `node-postgres` (default) | `node-sqlite` | `hono-cloudflare --db hyperdrive` | `hono-cloudflare --db d1` |
+| --- | --- | --- | --- | --- |
+| Pick it for | A Node server you host yourself | A Node server with no database to run: one file on disk | Cloudflare Workers with Postgres | Cloudflare Workers with SQLite |
+| API | Fastify 5, Pino | same | Hono on Workers (`wrangler dev`) | same |
+| Database | Postgres (yours, from `DATABASE_URL`), Kysely, migrations on boot | SQLite through Node's built-in `node:sqlite` (no dependency), Kysely, migrations on boot. The file is `DATABASE_PATH` (`apps/api/data/<name>.sqlite`) | Postgres through Hyperdrive, same Kysely migrations, run on the first request | D1, kysely-d1, SQL migrations applied before `wrangler dev` |
 
-Everything else is the same in all three: the web app, `packages/contracts`, the error
+Everything else is the same in all four: the web app, `packages/contracts`, the error
 shape, `GET /healthz`, `/openapi.json` with Scalar at `/docs`, the e2e tests, the hooks and
 `.agent/`.
 
@@ -325,7 +327,7 @@ The kit itself:
 | `src/`, `dist/agent-kit.mjs` | The CLI's TypeScript source, and its bundle. `dist/` is committed: `pnpm dlx` runs it without a build step |
 | `package.json` | The CLI's name, `bin`, version (stamped into each scaffold commit) and the files it ships (`dist`, `templates`) |
 | `templates/shared/` | Files every variant gets. `_gitignore` becomes `.gitignore`, since packing drops `.gitignore` files |
-| `templates/node-postgres/base/` | The Fastify api, e2e serve script |
+| `templates/node/base/` and `db-*/` | The Fastify api and e2e serve script, plus the files for each database (`node-postgres`, `node-sqlite`) |
 | `templates/hono-cloudflare/base/` and `db-*/` | The Hono api, plus the files for each database |
 | `templates/ui/base-ui/`, `templates/ui/ui-sdk/` | Each component library's `ui.json` (its packages, catalog versions and Renovate rule, merged in by the CLI), `global.css`, `components/ui` wrappers and `.agent/COMPONENTS.md` |
 | `SKILL.md` | The agent-kit skill: asks for the brief and choices, then runs the CLI |
@@ -350,7 +352,7 @@ To change the template or the CLI:
    `pnpm record-cache` (signed in with `claude`), and commit
    `templates/shared/packages/e2e/.e2e/cache`.
 3. Run `pnpm test`, or `pnpm test node-postgres` for one variant, with `DATABASE_URL`
-   set to a Postgres you run (not needed for `hono-cloudflare:d1` alone). It builds the CLI
+   set to a Postgres you run (not needed for `node-sqlite` or `hono-cloudflare:d1` alone). It builds the CLI
    (and fails if the committed `dist/` is out of date), scaffolds each variant, runs
    the hooks with Claude Code signed out, and fails on any leftover placeholder. It must
    pass before an update is merged. `KEEP=1 pnpm test` keeps the scaffolded projects so

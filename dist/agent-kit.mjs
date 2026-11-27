@@ -47,7 +47,7 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
 
   --name <name>            Project name in kebab-case (defaults to the folder name)
   --title <title>          Display name (defaults to the name in Title Case)
-  --variant <variant>      node-postgres (default) or hono-cloudflare
+  --variant <variant>      node-postgres (default), node-sqlite or hono-cloudflare
   --db <db>                hono-cloudflare only: hyperdrive (default) or d1
   --ui <library>           Headless components: base-ui (default, stable) or ui-sdk (beta)
   --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
@@ -61,6 +61,12 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
 [dir] defaults to ./<name>. Anything not given is asked for, unless --yes is set or
 nobody is at a terminal (a bot, CI). The last lines printed are PROJECT_DIR=,
 PROJECT_REPO= and PROJECT_ISSUE=.`;
+var VARIANT_LAYERS = {
+  "node-postgres": { stack: "node", db: "postgres" },
+  "node-sqlite": { stack: "node", db: "sqlite" },
+  "hono-cloudflare": { stack: "hono-cloudflare", db: void 0 }
+};
+var VARIANTS = Object.keys(VARIANT_LAYERS);
 var UIS = ["base-ui", "ui-sdk"];
 var NAME = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 function titleFromName(name) {
@@ -71,9 +77,8 @@ function validate(o) {
   if (o.name === "kitapp") fail("--name can't be the template placeholder 'kitapp'");
   if (o.name.length > 50) fail("--name must be 50 characters or fewer");
   if (/['"\\\n]/.test(o.title)) fail("--title can't contain quotes, backslashes or newlines");
-  if (o.variant !== "node-postgres" && o.variant !== "hono-cloudflare")
-    fail("--variant must be node-postgres or hono-cloudflare");
-  if (o.variant === "node-postgres" && o.db) fail("--db only applies to --variant hono-cloudflare");
+  if (!VARIANTS.includes(o.variant)) fail(`--variant must be ${VARIANTS.join(", ")}`);
+  if (o.variant !== "hono-cloudflare" && o.db) fail("--db only applies to --variant hono-cloudflare");
   if (o.variant === "hono-cloudflare") {
     o.db ??= "hyperdrive";
     if (o.db !== "hyperdrive" && o.db !== "d1") fail("--db must be hyperdrive or d1");
@@ -137,7 +142,7 @@ async function getOptions(argv) {
     try {
       name ??= await ask("Project name, kebab-case:");
       title ??= await ask("Display name:", titleFromName(name));
-      variant ??= await ask("Variant, node-postgres or hono-cloudflare:", "node-postgres");
+      variant ??= await ask(`Variant, ${VARIANTS.join(", ")}:`, VARIANTS[0]);
       if (variant === "hono-cloudflare") db ??= await ask("Database, hyperdrive or d1:", "hyperdrive");
       ui ??= await ask("Components, base-ui (stable) or ui-sdk (beta):", UIS[0]);
       dirArg ??= await ask("Folder:", `./${name}`);
@@ -156,7 +161,7 @@ async function getOptions(argv) {
     dir: resolve((dirArg ?? `./${name}`).replace(/^~(?=\/|$)/, homedir())),
     name,
     title: title || titleFromName(name),
-    variant: variant ?? "node-postgres",
+    variant: variant ?? VARIANTS[0],
     db,
     ui: ui || void 0,
     brief,
@@ -169,10 +174,11 @@ async function getOptions(argv) {
 
 // src/checks.ts
 function layers(o) {
+  const { stack, db = o.db } = VARIANT_LAYERS[o.variant];
   return [
     join2(KIT_DIR, "templates/shared"),
-    join2(KIT_DIR, "templates", o.variant, "base"),
-    ...o.db ? [join2(KIT_DIR, "templates", o.variant, `db-${o.db}`)] : [],
+    join2(KIT_DIR, "templates", stack, "base"),
+    ...db ? [join2(KIT_DIR, "templates", stack, `db-${db}`)] : [],
     join2(KIT_DIR, "templates/ui", o.ui ?? "")
   ];
 }

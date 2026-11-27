@@ -11,7 +11,7 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
 
   --name <name>            Project name in kebab-case (defaults to the folder name)
   --title <title>          Display name (defaults to the name in Title Case)
-  --variant <variant>      node-postgres (default) or hono-cloudflare
+  --variant <variant>      node-postgres (default), node-sqlite or hono-cloudflare
   --db <db>                hono-cloudflare only: hyperdrive (default) or d1
   --ui <library>           Headless components: base-ui (default, stable) or ui-sdk (beta)
   --brief-file <path|->    The owner's brief, word for word, for .agent/BRIEF.md ("-": stdin)
@@ -26,7 +26,17 @@ Creates a project in IRFANCODER's stack, ready for an agent team.
 nobody is at a terminal (a bot, CI). The last lines printed are PROJECT_DIR=,
 PROJECT_REPO= and PROJECT_ISSUE=.`;
 
-export type Variant = 'node-postgres' | 'hono-cloudflare';
+/**
+ * Each variant's templates: templates/<stack>/base, then templates/<stack>/db-<db>. A
+ * variant without a fixed db takes --db. The first is the default.
+ */
+export const VARIANT_LAYERS = {
+  'node-postgres': { stack: 'node', db: 'postgres' },
+  'node-sqlite': { stack: 'node', db: 'sqlite' },
+  'hono-cloudflare': { stack: 'hono-cloudflare', db: undefined },
+} as const;
+export type Variant = keyof typeof VARIANT_LAYERS;
+export const VARIANTS = Object.keys(VARIANT_LAYERS) as Variant[];
 export type Db = 'hyperdrive' | 'd1';
 /** Headless component libraries, one per templates/ui/<name>. The first is the default. */
 export const UIS = ['base-ui', 'ui-sdk'] as const;
@@ -58,9 +68,8 @@ function validate(o: Options): Options & { ui: Ui } {
   if (o.name.length > 50) fail('--name must be 50 characters or fewer');
   // The title lands inside TS and JSON string literals.
   if (/['"\\\n]/.test(o.title)) fail("--title can't contain quotes, backslashes or newlines");
-  if (o.variant !== 'node-postgres' && o.variant !== 'hono-cloudflare')
-    fail('--variant must be node-postgres or hono-cloudflare');
-  if (o.variant === 'node-postgres' && o.db) fail('--db only applies to --variant hono-cloudflare');
+  if (!VARIANTS.includes(o.variant)) fail(`--variant must be ${VARIANTS.join(', ')}`);
+  if (o.variant !== 'hono-cloudflare' && o.db) fail('--db only applies to --variant hono-cloudflare');
   if (o.variant === 'hono-cloudflare') {
     o.db ??= 'hyperdrive';
     if (o.db !== 'hyperdrive' && o.db !== 'd1') fail('--db must be hyperdrive or d1');
@@ -73,7 +82,7 @@ function validate(o: Options): Options & { ui: Ui } {
 
 /**
  * The .env key that holds the URL of the Postgres the user provides (the kit never
- * starts one), or null for D1. Wrangler names Hyperdrive's after its binding.
+ * starts one), or null for SQLite and D1. Wrangler names Hyperdrive's after its binding.
  */
 export function dbEnvVar(o: Options): string | null {
   if (o.variant === 'node-postgres') return 'DATABASE_URL';
@@ -137,7 +146,7 @@ export async function getOptions(argv: string[]): Promise<(Options & { ui: Ui })
     try {
       name ??= await ask('Project name, kebab-case:');
       title ??= await ask('Display name:', titleFromName(name));
-      variant ??= (await ask('Variant, node-postgres or hono-cloudflare:', 'node-postgres'));
+      variant ??= await ask(`Variant, ${VARIANTS.join(', ')}:`, VARIANTS[0]);
       if (variant === 'hono-cloudflare') db ??= await ask('Database, hyperdrive or d1:', 'hyperdrive');
       ui ??= await ask('Components, base-ui (stable) or ui-sdk (beta):', UIS[0]);
       dirArg ??= await ask('Folder:', `./${name}`);
@@ -157,7 +166,7 @@ export async function getOptions(argv: string[]): Promise<(Options & { ui: Ui })
     dir: resolve((dirArg ?? `./${name}`).replace(/^~(?=\/|$)/, homedir())),
     name,
     title: title || titleFromName(name),
-    variant: (variant ?? 'node-postgres') as Variant,
+    variant: (variant ?? VARIANTS[0]) as Variant,
     db: db as Db | undefined,
     ui: (ui || undefined) as Ui | undefined,
     brief,
