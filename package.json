@@ -1,6 +1,6 @@
 {
   "name": "agent-kit",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "description": "Start a project in IRFANCODER's stack, ready for an agent team",
   "type": "module",
