@@ -72,7 +72,7 @@ function checkMachine(o) {
 // src/github.ts
 var PLAN_ISSUE = `Read \`AGENTS.md\`, then plan the project from \`.agent/BRIEF.md\`: \`GOAL.md\`, \`SPEC.md\` and \`feature_list.json\`.
 
-Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first, then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
+Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first (its steps: \`.claude/skills/design-language/SKILL.md\`), then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
 function publish(o) {
   const here = { cwd: o.dir };
   step("Installing the e2e browser for the pre-push hook (cached per machine)");

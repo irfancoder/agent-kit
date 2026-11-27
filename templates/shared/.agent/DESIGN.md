@@ -5,7 +5,7 @@ Read by the Builder and the Evaluator before any UI work.
 ## Design language
 
 The project starts with agent-kit's neutral look. Its own design language is set once,
-by the **design-language** skill (`.claude/skills/design-language`), which runs
+by following **`.claude/skills/design-language/SKILL.md`**, which runs
 [Hallmark](https://github.com/nutlope/hallmark) and locks the result in `DESIGN.md` at
 the repo root. The Planner makes that the first ticket, before any UI feature.
 
