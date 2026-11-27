@@ -46,7 +46,7 @@ export function checkMachine(o: Options): void {
     if (output('gh', ['repo', 'view', `${o.owner}/${o.name}`]) !== null) fail(`github.com/${o.owner}/${o.name} already exists`);
     // The first push runs the pre-push e2e hook, which replays agent steps from the cache.
     if (!readdirSync(join(KIT_DIR, 'templates/shared', E2E_CACHE)).some((f) => f.endsWith('.json')))
-      fail("agent-kit's e2e replay cache isn't recorded yet, so the first push would fail (irfancoder/agent-kit#1)");
+      fail("agent-kit's e2e replay cache is missing, so the first push would fail (re-record it: pnpm record-cache)");
   }
 
   if (!/"loggedIn":\s*true/.test(output('claude', ['auth', 'status']) ?? ''))

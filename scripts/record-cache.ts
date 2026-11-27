@@ -19,7 +19,11 @@ if (!/"loggedIn":\s*true/.test(output('claude', ['auth', 'status']) ?? '')) {
 const work = mkdtempSync(join(tmpdir(), 'agent-kit-record-'));
 try {
   const app = join(work, 'app');
-  run('node', [join(KIT_DIR, 'src/index.ts'), app, '--name', 'record-app', '--yes'], { stdio: 'ignore' });
+  // node-sqlite needs no database server. The web app, and so the recording, is the
+  // same in every variant.
+  run('node', [join(KIT_DIR, 'src/index.ts'), app, '--name', 'record-app', '--variant', 'node-sqlite', '--yes'], {
+    stdio: 'ignore',
+  });
   const e2e = join(app, 'packages/e2e');
   rmSync(join(app, E2E_CACHE), { recursive: true, force: true });
 
