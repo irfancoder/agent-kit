@@ -120,8 +120,8 @@ of asking. It:
 5. with `--github`: creates the private repo, pushes (through the pre-push hook), adds the
    `ready` and `needs-decision` labels, and opens the Planner's issue.
 
-`--github` refuses to run until agent-kit's e2e cache is recorded, because the first push
-would fail ([irfancoder/agent-kit#1](https://github.com/irfancoder/agent-kit/issues/1)).
+`--github` refuses to run if agent-kit's e2e replay cache is missing, because the first
+push would fail.
 The last lines printed are `PROJECT_DIR=`, `PROJECT_REPO=` and `PROJECT_ISSUE=`.
 
 ## Run it
@@ -313,10 +313,7 @@ to add a component.
   Re-record that test (`e2e:record`) and commit the cache.
 - **pre-push fails with `MODEL_PROVIDER_FAILED … Authentication required`:** a test has an agent step that was never
   recorded and Claude Code isn't signed in. Run `claude` and sign in, record the step
-  (`e2e:record`) and commit the cache. agent-kit's
-  own example test is still unrecorded
-  ([irfancoder/agent-kit#1](https://github.com/irfancoder/agent-kit/issues/1)), so a fresh
-  project's first push fails this way until that's done.
+  (`e2e:record`) and commit the cache.
 
 ## Maintaining agent-kit
 
