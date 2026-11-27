@@ -57,6 +57,15 @@ API docs: http://127.0.0.1:3001/docs (Scalar) and `/openapi.json`.
 | `SECURITY_CHECKLIST.md` | Every PR is checked against it                                                                                                                             |
 | `init.sh`               | One idempotent command from a fresh clone                                                                                                                  |
 
+Use `pnpm agent` rather than reading or editing these files by hand:
+
+- `pnpm agent status` gives a short summary: the status, the next ready feature, retries, `HEAD` and the last five `PROGRESS.md` lines. If it prints `STOP`, stop the run.
+- `pnpm agent show <id>` prints one feature.
+- `pnpm agent pass <id> [note]` and `pnpm agent unpass <id> [note]` set `passes` and log it. Only the Evaluator runs these.
+- `pnpm agent fail <id>` counts a failed attempt. When it prints `REPLAN`, send the feature back to the Planner.
+- `pnpm agent log '<bot> | <ticket> | <what changed> | <what's next>'` appends a `PROGRESS.md` line and adds the date for you.
+- `pnpm agent pause <reset time, ISO UTC>` pauses every worktree until a model limit resets.
+
 ## Rules for agents
 
 1. **Never commit or push to `main`.** Every change goes through a short-lived branch (`feat/<id>` or `fix/<id>`) and a PR. Use Conventional Commits (`feat: …`, `fix: …`, `chore: …`).
@@ -65,4 +74,4 @@ API docs: http://127.0.0.1:3001/docs (Scalar) and `/openapi.json`.
 4. **If a change alters a flow,** re-record that test's replay cache on purpose (`e2e:record`) and commit the cache in the same PR. Never delete a test to make the suite pass.
 5. **API changes start in `packages/contracts`.** `/openapi.json` must show the change.
 6. **Every new env var** goes into the env schema and `.env.example`.
-7. **Read `.agent/` state before working,** and append a line to `PROGRESS.md` before stopping.
+7. **Run `pnpm agent status` before working,** and log a line with `pnpm agent log` before stopping.
