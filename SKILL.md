@@ -15,7 +15,7 @@ script from it. You don't need to read the templates.
 Ask the owner for the brief in their own words: who it's for, what they should be able
 to do, and anything they already know about hosting or data. Keep the reply **word for
 word**: don't summarise, fix or add to it. The Planner works from exactly what the owner
-said. Save it to a temp file.
+said. You'll pass it to the script in step 3.
 
 If the reply is only a line or two, that's fine. Don't interview them; the Planner asks
 follow-up questions later, on the planning issue.
@@ -45,31 +45,33 @@ create anything before they say yes.
 
 ## 3. Fetch the kit and run it
 
-If the folder this `SKILL.md` is in also has `scripts/kickstart.sh` (a full checkout, on
-someone's own machine), use that folder as `<kit>`. Otherwise fetch it:
+Run this as **one** command, so the temp folder holding the brief and the kit is deleted
+when it ends, whether kickstart succeeds or fails:
 
 ```bash
-KIT="$(mktemp -d)/agent-kit"
-gh repo clone irfancoder/agent-kit "$KIT" -- --depth 1 --branch "${AGENT_KIT_REF:-main}"
+WORK="$(mktemp -d)" && trap 'rm -rf "$WORK"' EXIT && cat > "$WORK/brief.md" <<'AGENT_KIT_BRIEF'
+<the owner's brief, word for word>
+AGENT_KIT_BRIEF
+gh repo clone irfancoder/agent-kit "$WORK/agent-kit" -- --depth 1 --branch "${AGENT_KIT_REF:-main}" \
+  && bash "$WORK/agent-kit/scripts/kickstart.sh" --brief-file "$WORK/brief.md" \
+     --name <name> --title "<Title>" --variant <variant> [--db d1] --reason "<why>" \
+     [--dir <folder>] [--owner <owner>]
 ```
 
-`gh` must be signed in with read access to the repo; the script needs the same login to
-create the project's repo. If the clone fails, report it and stop. `AGENT_KIT_REF` picks
-another branch or tag, for trying a change before it's merged.
-
-Then run the script, with `bash`:
-
-```bash
-bash "<kit>/scripts/kickstart.sh" --name <name> --title "<Title>" --brief-file <file> \
-  --variant <variant> [--db d1] --reason "<why>" [--dir <folder>] [--owner <owner>]
-```
+- **The clone** is `main` of the private repo `irfancoder/agent-kit`. `gh` must be signed
+  in with read access, and the script needs the same login to create the project's
+  repo. `AGENT_KIT_REF` picks another branch or tag, to try a change before it's merged.
+- **A full checkout:** if the folder this `SKILL.md` is in also has
+  `scripts/kickstart.sh` (someone's own machine), skip the clone and run
+  `bash <that folder>/scripts/kickstart.sh` the same way.
+- **Nothing to clean up:** the project is created in its own folder (`--dir`, default
+  `~/projects/<name>`), outside the temp folder, so the cleanup never touches it.
 
 It checks the machine first and stops before creating anything if something is
 missing. Then it scaffolds the project with the brief in its first commit, creates the
 private repo, pushes, and opens the Planner's issue. The last three lines it prints are
-`KICKSTART_DIR=`, `KICKSTART_REPO=` and `KICKSTART_ISSUE=`. Run
-`bash <kit>/scripts/kickstart.sh --help` for every option. The clone is a temp folder;
-leave it, as it isn't part of the project.
+`KICKSTART_DIR=`, `KICKSTART_REPO=` and `KICKSTART_ISSUE=`. `kickstart.sh --help`
+lists every option.
 
 If it fails, report the error as it is and stop. Never use `--no-verify`, delete folders
 or repos, or edit agent-kit to get past a check. Pass on any warnings, such as Claude
