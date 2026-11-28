@@ -1,14 +1,13 @@
 /*
  * Design tokens: the one source of truth for colour, type, space, shape and motion.
  *
- * Names and layout follow Hallmark's Tailwind v4 format (https://github.com/nutlope/hallmark,
- * references/export-formats.md), so a Hallmark run (the design-language skill) rewrites
- * the values in this file and everything follows:
+ * The design ticket (.agent/DESIGN.md, with the impeccable skill) rewrites the values in
+ * this file, keeping the names and layout, and everything follows:
  * - @theme static holds colours, fonts, text sizes, radii, shadows and eases. Each is a
  *   Tailwind utility (bg-paper, text-ink, font-display, rounded-card) and a CSS variable.
  * - :root holds the rest.
  *
- * Neutral starter values: no design language has been chosen yet. Each colour is
+ * Neutral starter values: the project has no look of its own yet. Each colour is
  * light-dark(<light>, <dark>); app.css decides which one shows.
  * There is no dark: variant: write colours as light-dark() tokens, not per-scheme classes.
  */
@@ -30,7 +29,7 @@
   --color-error-ink: light-dark(#ffffff, #0b0b0f);
   --color-success: light-dark(#15803d, #4ade80);
   /* The primary action's fill. Most themes use the accent; a theme whose primary
-     button is ink-filled (Hallmark's Ink, for one) sets var(--color-ink). */
+     button is ink-filled sets var(--color-ink). */
   --color-primary: var(--color-accent);
   --color-primary-ink: var(--color-accent-ink);
   /* Control borders need 3:1 against the paper, so they mix from the ink. */
@@ -41,7 +40,7 @@
   --font-body: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
 
-  /* Hallmark's app-screen scale. */
+  /* The app-screen scale (ratio 1.2 from 16px). */
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;

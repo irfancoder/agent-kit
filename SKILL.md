@@ -90,5 +90,5 @@ Tell the owner, in a few lines:
 - the name, title, variant and component library, and where the project is;
 - any warnings, with the fix (for example, run `claude` and sign in);
 - what happens next: the Planner picks up the issue and writes the goal, the spec and the
-  feature list. The first ticket after that is the design language, which needs the
-  Hallmark skill in this environment.
+  feature list. The first ticket after that is the design ticket, which needs the
+  impeccable skill in this environment.

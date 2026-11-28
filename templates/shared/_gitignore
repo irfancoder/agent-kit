@@ -18,3 +18,11 @@ packages/e2e/.e2e/*
 # SQLite databases (node-sqlite)
 *.sqlite
 *.sqlite-*
+# impeccable (design, in apps/web): only its shared files are committed
+**/.impeccable/*
+!**/.impeccable/config.json
+!**/.impeccable/design.json
+!**/.impeccable/surfaces/
+!**/.impeccable/critique/
+**/.impeccable/critique/*
+!**/.impeccable/critique/ignore.md

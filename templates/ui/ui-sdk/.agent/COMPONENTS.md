@@ -17,13 +17,12 @@ handles behaviour, focus and ARIA, and renders no styles of its own;
   `!important` or generated ids. A solid button is `<Button variant="solid">`.
 - **Control height** is `--ui-spacing` × 8 (32px), set by web.css.
 
-## For the design language
+## For the design ticket
 
 - Keep the `--ui-*` block in `global.css` pointing at token roles: change what a
   `--ui-*` points at (`--ui-radius: var(--radius-pill)` for a pill theme), never give it
   a raw value.
-- ui-sdk puts `data-slot` on every part, so delete Hallmark's `[data-slot]` photo-slot
-  rules when you copy its `base.css`. They would give every button and field a gradient.
-- Hallmark's linter can't see web.css (it's in `node_modules`), so it reports no
-  `:focus-visible`, `:active` or `:disabled` styling. Restate those states for
-  `[data-slot]` in `global.css` from the tokens rather than waiving them.
+- If a review flags a missing focus, pressed or disabled state, check the running app
+  first: those styles are in web.css, in `node_modules`, where a source scan can't see
+  them. Restate a state that's really missing for `[data-slot]` in `global.css`, from the
+  tokens.

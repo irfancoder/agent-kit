@@ -4,7 +4,7 @@ import { fail, output, run, step } from './util.ts';
 // Only what the issue adds; AGENTS.md holds the rules.
 const PLAN_ISSUE = `Read \`AGENTS.md\`, then plan the project from \`.agent/BRIEF.md\`: \`GOAL.md\`, \`SPEC.md\` and \`feature_list.json\`.
 
-Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design-language ticket first (its steps: \`.claude/skills/design-language/SKILL.md\`), then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
+Then open the issues the team works from, each labelled \`ready\` once nothing it depends on is still open: the design ticket first (its steps: "Setting the look" in \`.agent/DESIGN.md\`), then one per feature. For a question only the owner can answer, comment here with your recommendation and add \`needs-decision\`.`;
 
 /** Creates the private repo, pushes main (through the pre-push hook), and opens the Planner's issue. */
 export function publish(o: Options): { repo: string; issue: string } {
