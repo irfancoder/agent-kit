@@ -8,7 +8,7 @@ Guide for people and agents working in this repo. Scaffolded by agent-kit.
 | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | `apps/web`                                    | React 19 SPA: Rsbuild, TanStack Router (file-based, `src/routes`) and Query, ky, Tailwind v4 |
 | `apps/web/src/components/ui`                  | Wrappers around the headless component library (see `.agent/COMPONENTS.md`)                  |
-| `apps/web/src/styles/tokens.css`              | Design tokens (Hallmark's names), and the Tailwind utilities they make                       |
+| `apps/web/src/styles/tokens.css`              | Design tokens, and the Tailwind utilities they make                                          |
 | `apps/web/src/i18n`                           | Typed `t()` messages: `en.ts` (source of truth) and `ms.ts`                                  |
 | `apps/api`                                    | The api (see `apps/api/src/app.ts`), with Valibot validation, Pino logs, Kysely              |
 | `packages/contracts`                          | Valibot schemas and the one route map shared by web and api; generates `/openapi.json`       |
@@ -36,7 +36,7 @@ API docs: http://127.0.0.1:3001/docs (Scalar) and `/openapi.json`.
 - **API:** a change starts in `packages/contracts/src/routes.ts` (route + schemas). The api registers it with `defineRoute`, which validates the request and the response against the contract. `/openapi.json` must show the change.
 - **Errors:** every api error has the shape `{ "error": { "code", "message", "details"? } }`.
 - **Env:** a new env var goes into the env schema (`apps/api/src/env.ts`) and `.env.example`. The api refuses to start on a missing or bad value.
-- **Design language:** set once by following `.claude/skills/design-language/SKILL.md` (it drives the Hallmark skill), locked in `DESIGN.md` at the root. Read that file and follow its steps whether or not your environment loads it as a skill. The Planner schedules it before any UI feature; after that, every UI ticket follows `DESIGN.md`.
+- **Design:** the look is set once, in the design ticket ("Setting the look" in `.agent/DESIGN.md`, with the impeccable skill), and locked in `apps/web/DESIGN.md`. Every UI ticket after it follows that file and gets the design review in `.agent/DESIGN.md`.
 - **UI:** components come from `@/components/ui/*`, wrappers around the headless library described in `.agent/COMPONENTS.md` (where its docs are and how it's styled). Need another component? Add a wrapper there, following that file. Style with Tailwind utilities on the token names (`bg-paper`, `text-muted`, `rounded-card`) and the components' state attributes (`data-pressed:`, `data-open:`); there is no Tailwind palette, no raw values and no `dark:` variant (colours are `light-dark()` tokens). Shared app pieces (`Card`, `EmptyState`) live in `src/components`; reuse them rather than repeating their classes. Name every control. Read `.agent/DESIGN.md` first.
 - **Copy:** user-facing text goes through `t()`; add the key to `en.ts` and `ms.ts`.
 - **Database:** Kysely, no ORM. Add a migration file and list it in the migrations map; migrations run on boot.
@@ -53,7 +53,7 @@ API docs: http://127.0.0.1:3001/docs (Scalar) and `/openapi.json`.
 | `PROGRESS.md`           | Append-only, one line per run: `date \| bot \| ticket \| what changed \| what's next`                                                                      |
 | `STATUS`                | One of `RUNNING`, `PAUSED_LIMIT`, `DONE`, `BLOCKED`. Only the Lead writes it                                                                               |
 | `COMPONENTS.md`         | The headless component library: where its docs are and how it's styled                                                                                     |
-| `DESIGN.md`             | Tokens, scale, mood and the design rubric. Read by the Builder and the Evaluator                                                                           |
+| `DESIGN.md`             | Tokens, scale, mood, the design review and the design ticket's steps. Read by the Builder and the Evaluator                                                |
 | `SECURITY_CHECKLIST.md` | Every PR is checked against it                                                                                                                             |
 | `init.sh`               | One idempotent command from a fresh clone                                                                                                                  |
 

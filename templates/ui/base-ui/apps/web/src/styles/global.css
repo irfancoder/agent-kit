@@ -1,4 +1,4 @@
 @import 'tailwindcss';
-/* Design tokens (Hallmark's names; the design-language skill rewrites them). */
+/* Design tokens (the design ticket in .agent/DESIGN.md rewrites them). */
 @import './tokens.css';
 @import './app.css';

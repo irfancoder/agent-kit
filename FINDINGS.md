@@ -9,7 +9,7 @@ answers were read.
 
 | Question | Answer |
 | --- | --- |
-| Brand palette and type | None in agent-kit: projects start neutral (greys, system type, the 1.2 app scale) and set their own design language with the design-language skill (Hallmark). Values live in the template's `apps/web/src/styles/tokens.css`. |
+| Brand palette and type | None in agent-kit: projects start neutral (greys, system type, the 1.2 app scale) and get their own look in a design ticket, with the impeccable skill. Values live in the template's `apps/web/src/styles/tokens.css`. |
 | Default UI language | English and Bahasa Melayu from day one: `en.ts` (source of truth) and `ms.ts`, typed `t()` and `tCount()` (Intl.PluralRules). |
 | Cloudflare database | Both, chosen at scaffold time: `--db hyperdrive` (default: Postgres through Hyperdrive, same Kysely migrations as the Node variant) or `--db d1` (D1/SQLite with kysely-d1 and SQL migrations). |
 | SECURITY_CHECKLIST.md | A starter version is in `templates/shared/.agent/SECURITY_CHECKLIST.md`. Irfan supplies the final text. |
@@ -39,9 +39,8 @@ Docs: [Quickstart](https://e2e.com/docs/quickstart), [Cache](https://e2e.com/doc
 
 Docs: [Base UI](https://base-ui.com) and [ui-sdk](https://ui-sdk.dev/docs) (both also ship their docs in `node_modules`), [Tailwind v4](https://tailwindcss.com/docs).
 
-Hallmark's linter reads plain CSS and Tailwind class strings, so components are styled
-with Tailwind on the tokens (not CSS-in-JS), and every colour, font and radius comes from
-`tokens.css`.
+Components are styled with Tailwind on the tokens (not CSS-in-JS), and every colour, font
+and radius comes from `tokens.css`.
 
 **Two headless libraries, chosen with `--ui`.** Pages import wrappers from
 `@/components/ui/*` (button, field, input, toggle, toast) with the same props either way,
@@ -62,14 +61,13 @@ rules and base styles are in a shared `app.css`, so `tokens.css` holds only desi
 - **ui-sdk** (`@ui-sdk/react` + `@ui-sdk/core` 0.1.0-beta.17, Apache-2.0) is the option:
   in beta and shipping often. Its `web.css` gives every component a look and reads only
   `--ui-*` variables, which `global.css` points at the tokens. It puts `data-slot` on
-  every part (which clashes with Hallmark's `base.css`, see below), and Hallmark's linter
-  can't see its focus or pressed styles in `node_modules`. Its agent bridge (`createAgent`,
+  every part, and a source scan can't see its focus or pressed styles in `node_modules`. Its agent bridge (`createAgent`,
   WebMCP) isn't wired in.
 
 **Tailwind v4** through `@tailwindcss/postcss` (Rsbuild picks up `postcss.config.mjs`).
-`tokens.css` uses Hallmark's Tailwind layout (`@theme static` for colours, fonts, text,
-radii, shadows and eases), with `--color-*: initial` so Tailwind's palette doesn't exist.
-No `--spacing-*` names, as Hallmark advises.
+`tokens.css` uses Tailwind's `@theme static` layout for colours, fonts, text, radii,
+shadows and eases, with `--color-*: initial` so Tailwind's palette doesn't exist, and no
+`--spacing-*` names.
 
 **Colour scheme:** a small module of the template's own (`lib/color-scheme.ts`) writes
 `data-color-scheme` on `<html>` (`system`, `light`, `dark`) and stores the choice;
@@ -83,35 +81,57 @@ colour is invalid.
 code-split route is one. The first visit then sends the component library through an HMR
 update it can't accept, and the page reloads mid-e2e. `dev.lazyCompilation` is off.
 
-## Hallmark (design language)
+## impeccable (design)
 
-Source: [nutlope/hallmark](https://github.com/nutlope/hallmark), MIT, pinned at `04977e1` (v2.0.0).
+Source: [pbakaus/impeccable](https://github.com/pbakaus/impeccable), Apache-2.0. The
+steps are written for skill v4.11.1 (tag `skill-v4.11.1`, commit `2fc5e14`). It replaced
+the design skill agent-kit used through v0.2.
 
-- **What it is:** a design skill for Claude Code and Codex. It has a "Floor" of rules a
-  build can't break (every colour and font through a token, focus-visible on every
-  control, reduced-motion fallbacks, no invented metrics). It deals a theme from about 50
-  so projects don't converge on one look, and has an app-screen scope for tools and
-  dashboards. Its linter is `scripts/sloplint.mjs` (a static tier, plus a render tier
-  that needs puppeteer-core and Chrome).
-- **Where it plugs in:** Hallmark's source of truth is a `tokens.css` of CSS variables with
-  fixed role names (`--color-paper`, `--color-ink`, `--color-accent`, `--font-body`,
-  `--text-*`, `--space-*`, …). Its rule for an existing project is to map onto the
-  project's token names, not add a parallel set. So the template's `tokens.css` uses
-  Hallmark's names and its Tailwind v4 layout, and maps ui-sdk's `--ui-*` variables onto
-  them. A Hallmark run replaces values in one file and everything follows.
-- **Locking:** "lock the system" writes `DESIGN.md` at the repo root. Hallmark's
-  pre-flight treats a root `DESIGN.md` as locked and makes every later run follow it.
-  That is why the template keeps its own rubric in `.agent/DESIGN.md` and ships no root
-  `DESIGN.md`.
-- **App scale:** Hallmark's app-screen type scale (0.75 / 0.875 / 1 / 1.2 / 1.44 / 1.728 /
-  2.074rem) is the template's existing scale, so nothing moves.
-- **Network:** only `theme.mjs photos --save` (Wikimedia downloads) and `imagegen.mjs`
-  (Together AI, only with `TOGETHER_API_KEY`) call out. The scaffold, the deal and the
-  linter are local.
-- **Install:** Hallmark is a skill of the environment, not of agent-kit: it's installed
-  in Rakazo's skill list (or with `npx skills add nutlope/hallmark` on a local machine).
-  agent-kit records the version it was tested with, v2.0.0 (`04977e1`), in its README.
-  Hallmark's optional edit-time hook edits Claude Code settings, so it isn't used.
+- **What it is:** a design skill of many commands. The ones agent-kit uses: `init`
+  writes `PRODUCT.md` (users, purpose, constraints); `shape` plans a screen before code
+  and, for a new look, runs a direction round (a visual world, then a concept) into a
+  brief; a build request then makes it, and at the finish its documenter writes
+  `DESIGN.md` from the built result; `audit` scores accessibility, performance,
+  theming, responsive behaviour and anti-patterns; `critique` scores Nielsen's
+  heuristics, with a design-specificity verdict. Both rank findings P0–P3. Its
+  deterministic detector (`impeccable detect`) runs inside `critique`, and on its own.
+- **Where it plugs in:** it reads and writes `PRODUCT.md` and `DESIGN.md` at its
+  project root, plus a few shared files under `.impeccable/`. In a scaffolded project
+  `impeccable context` finds one UI app, `apps/web`, and from the repo root stops to ask
+  which app to use; run from `apps/web`, that's its root. It doesn't look in `.agent/`, so `.agent/DESIGN.md` stays agent-kit's own: the tokens' rules, the
+  review gate and the design ticket's steps. The template ships no `DESIGN.md` for it, but
+  it reads the neutral starter styles as an incumbent look, so the design ticket tells
+  it the look is a replacement world.
+- **Modes:** it picks ambition from the surface. App screens are Operate: restraint and
+  precision over expression, and always built code-first (no image comp).
+- **No one to ask:** `init`, `shape` and the build ask questions. Its rules let it infer
+  from the brief when the user says to proceed, labelling what it inferred, so the
+  ticket points it at `.agent/BRIEF.md` and `.agent/GOAL.md` and has the bot proceed.
+- **Network:** the skill's engine is a binary that ships with it or downloads once into
+  `~/.impeccable/bin/`. A new look fetches visual directions from the impeccable.style
+  catalog, and sends an anonymous record of which were shown and picked unless
+  telemetry is off (`npx impeccable telemetry off`, `DO_NOT_TRACK=1`, or
+  `"telemetry": false` in `.impeccable/config.json`). It never sends the project's
+  files or `PRODUCT.md`.
+- **Install:** a skill of the environment, not of agent-kit (the README says how). Its
+  optional edit-time hook writes into Claude Code's settings and runs outside the
+  model's approvals, so it isn't used.
+- **Not run yet:** a full design ticket on a scaffolded project with impeccable. The
+  steps were written from its docs; the first real run should confirm them.
+
+### Trial run with the earlier design skill (2026-11-27)
+
+A scaffolded "Stock Ledger" project got its look with the skill agent-kit used before
+impeccable. What it changed in the
+template, which still holds:
+
+- **Primary colour:** an accent is a signal colour, but some looks have an ink-filled
+  primary button. Components paint primary actions with a `--color-primary` role,
+  which defaults to the accent.
+- **`WEB_PORT`:** `init.sh` exported it but Turborepo drops shell env, so the web
+  server ignored it. Rsbuild now reads it from `.env`.
+- **Icons:** a linter can't see `aria-hidden` spread from an object, so the icons set it
+  inline.
 
 ## Running from Rakazo, and the CLI
 
@@ -134,31 +154,6 @@ has no runtime dependencies: its questions use `node:readline`. Releases are git
 - **Executable bits:** the CLI marks the project's `.sh` files executable after copying.
 - **No temp files:** the skill pipes the brief to `--brief-file -`, and pnpm manages its
   own download cache.
-
-### Trial run (2026-11-27)
-
-I gave a scaffolded "Stock Ledger" project a design language with the skill. Hallmark
-dealt Ink, Vellum and Coral and Ink was picked. The run went through Hallmark's
-scaffold, a merge into `tokens.css` with dark values derived from its recipe, a ruled
-ledger list as the signature, and `sloplint` (0 FAIL, the zero-chroma gate waived as
-Ink asks). DESIGN.md was locked and the commit passed pre-commit. What it changed in
-the template:
-
-- **`data-slot` clash:** Hallmark's `base.css` styles every `[data-slot]` as a photo
-  slot, but the components (shadcn-style then, ui-sdk now) put `data-slot` on every
-  part. The skill deletes those rules.
-- **Primary colour:** Hallmark's `--color-accent` is a signal colour, but Ink's primary
-  button is ink-filled. Components now paint primary actions with a
-  `--color-primary` role, which defaults to the accent.
-- **Waivers:** need the exact `/* Hallmark · waive <gate> · <evidence> · <reason> */`
-  form, with a reason that uses words from the page.
-- **`WEB_PORT`:** `init.sh` exported it but Turborepo drops shell env, so the web
-  server ignored it. Rsbuild now reads it from `.env`.
-- **Icons:** sloplint gate 33 can't see `aria-hidden` spread from an object, so the
-  icons set it inline.
-- **Not run:** Hallmark's render tier (screenshots, contrast in the browser) needs
-  `npm i -g puppeteer-core` and Chrome. I checked both themes in a browser by hand
-  instead.
 
 ## lefthook
 

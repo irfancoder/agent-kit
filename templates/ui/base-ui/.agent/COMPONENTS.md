@@ -35,10 +35,9 @@ behaviour, focus and ARIA, and renders no styles.
 - **Control height** is `h-8` (32px), set in `styles.ts` by `ghostControl`, `inputBox` and
   `listItem`. The number-field group, OTP slots and slider repeat it to line up with them.
 
-## For the design language
+## For the design ticket
 
 Every value comes from `tokens.css`, so a new palette, type and radius reach the
 components without edits. A look tokens can't express, such as a different control shape
 or pressed style, goes in the wrappers' classes in `src/components/ui/`, in one place
-(`styles.ts` for what several components share). Base UI doesn't set `data-slot`, so
-Hallmark's `base.css` slot rules don't touch these components.
+(`styles.ts` for what several components share).

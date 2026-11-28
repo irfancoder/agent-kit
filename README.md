@@ -17,7 +17,7 @@ copy or link to any MOF code or assets.
 - [Run it](#run-it)
 - [A project's life with an agent team](#a-projects-life-with-an-agent-team)
 - [Everyday commands](#everyday-commands)
-- [Design language](#design-language)
+- [Design](#design)
 - [Variants](#variants)
 - [What a project gets](#what-a-project-gets)
 - [Troubleshooting](#troubleshooting)
@@ -53,11 +53,16 @@ Every machine or bot environment that runs it needs:
 | Skill | Copy |
 | --- | --- |
 | `agent-kit` | `SKILL.md` from this repo. It only holds instructions, and runs the CLI with `pnpm dlx`. Recopy it only when `SKILL.md` itself changes |
-| `hallmark` | `skills/hallmark` from [nutlope/hallmark](https://github.com/nutlope/hallmark). agent-kit was tested with **v2.0.0** (commit `04977e1`); install that version |
+| `impeccable` | `.claude/skills/impeccable` from [pbakaus/impeccable](https://github.com/pbakaus/impeccable) (Apache-2.0). agent-kit's steps are written for **v4.11.1** (tag `skill-v4.11.1`, commit `2fc5e14`); install that version. The design ticket and every design review use it |
 
-**On your own machine,** install Hallmark yourself if you want design runs locally:
-`npx skills add nutlope/hallmark` (that's the latest version, not necessarily the tested
-one).
+**On your own machine,** install impeccable yourself if you want design runs locally:
+
+```bash
+npx impeccable@4.11.1 install --providers=claude --global --no-hooks
+```
+
+`--no-hooks` leaves out its edit-time hook (see `FINDINGS.md`); the Evaluator's reviews
+run the same checks.
 
 ## Start a project
 
@@ -166,14 +171,15 @@ holds the full rules. In short:
    `.agent/feature_list.json`: one entry per feature, each with user-level test steps.
    `pnpm check:agent` (also run by the pre-commit hook) validates the list against its
    schema.
-3. **Design language first.** The Planner's first ticket gives the app its look with the
-   `design-language` skill (see [Design language](#design-language)). Every UI ticket after
-   it follows the locked `DESIGN.md`.
+3. **Design first.** The Planner's first ticket gives the app its look with the
+   impeccable skill (see [Design](#design)). Every UI ticket after it follows the locked
+   `apps/web/DESIGN.md`.
 4. **Build.** The Builder works on one feature per short-lived branch (`feat/F-012`) and
    opens a PR. A change to the api starts in `packages/contracts`, and each feature gets an
    e2e test.
 5. **Review.** The Evaluator checks the PR against the feature's steps,
-   `.agent/DESIGN.md`'s rubric and `.agent/SECURITY_CHECKLIST.md`. Only the Evaluator flips
+   the design review in `.agent/DESIGN.md` and
+   `.agent/SECURITY_CHECKLIST.md`. Only the Evaluator flips
    a feature's `passes`.
 6. **Track.** Each run appends one line to `.agent/PROGRESS.md`, and decisions go in
    `.agent/DECISIONS.md`. The Lead sets `.agent/STATUS` (`RUNNING`, `PAUSED_LIMIT`, `DONE`
@@ -224,38 +230,38 @@ Adding things:
 - **A dependency:** pin it once in the `catalog:` of `pnpm-workspace.yaml` and use
   `"catalog:"` in the package. Renovate keeps the catalog up to date.
 
-## Design language
+## Design
 
-A new project looks neutral on purpose: greys, system fonts, plain controls. Each project gets its own look once, through the **design-language**
-skill it ships with (`.claude/skills/design-language`). Ask an agent to run the
-design-language skill, or make it the Planner's first ticket.
+A new project looks neutral on purpose: greys, system fonts, plain controls. Each
+project gets its own look once, in the design ticket the Planner opens first. Its steps
+are in the project's `.agent/DESIGN.md` ("Setting the look"), and they use
+[impeccable](https://github.com/pbakaus/impeccable):
 
-The skill:
-1. reads `.agent/BRIEF.md` and `.agent/GOAL.md` for audience, use and tone;
-2. runs [Hallmark](https://github.com/nutlope/hallmark) (MIT), which deals a theme from
-   about 50, or designs a custom one if the brief asks;
-3. writes its values into `apps/web/src/styles/tokens.css`;
-4. checks the result with Hallmark's linter and screenshots in light and dark;
-5. locks the system in `DESIGN.md` at the project root.
+1. `/impeccable init` writes `apps/web/PRODUCT.md` from `.agent/BRIEF.md` and `.agent/GOAL.md`;
+2. `/impeccable shape` plans the main screen: a visual world and a concept, as a brief;
+3. impeccable builds it, writing the values into `apps/web/src/styles/tokens.css`, and
+   records the system it built in `apps/web/DESIGN.md`;
+4. `/impeccable audit` and `/impeccable critique` check the result in light and dark.
 
-From then on, every UI ticket follows `DESIGN.md`.
+From then on, every UI ticket follows `apps/web/DESIGN.md`, and the Evaluator reviews
+each one with `audit` and `critique` against the bar in `.agent/DESIGN.md`.
 
 How it fits together:
 
-- `tokens.css` holds every colour, font, size, radius and shadow, in Hallmark's token names
-  and its Tailwind v4 layout. Each colour is written once as `light-dark(<light>, <dark>)`.
+- `tokens.css` holds every colour, font, size, radius and shadow, in Tailwind v4's
+  `@theme` layout. Each colour is written once as `light-dark(<light>, <dark>)`.
 - The tokens are Tailwind utilities (`bg-paper`, `text-ink`, `rounded-card`). Tailwind's
   own palette is switched off, so raw colours like `bg-zinc-100` don't exist.
 - The components read the same tokens (through Tailwind, or ui-sdk's `--ui-*` variables),
-  so a new design language is a new `tokens.css`; components and pages don't change.
+  so a new look is a new `tokens.css`; components and pages don't change.
 - Light and dark follow the OS. The Dark mode toggle in the header pins one, and the
   choice is saved.
 
-Hallmark isn't part of agent-kit or of any project: it's a skill of the environment,
-installed in Rakazo's skill list (or `~/.claude/skills` on your own machine). The
-design-language skill relies on Hallmark's scaffold command, its linter and its waiver
-format, so move Rakazo to a newer Hallmark on purpose, as you would bump a dependency.
-Try a design run on a scratch project first, then update the tested version above.
+impeccable isn't part of agent-kit or of any project: it's a skill of the environment,
+installed in Rakazo's skill list (or `~/.claude/skills` on your own machine). Its
+commands and the records it writes change between versions, so move Rakazo to a newer
+impeccable on purpose, as you would bump a dependency. Try a design run on a scratch
+project first, then update the version above.
 
 ## Variants
 
@@ -297,8 +303,8 @@ to add a component.
   replay cache.
 - **Checks:** Oxlint, oxfmt, Rstest and lefthook.
 - **Guides for agents:** `AGENTS.md`, the `.agent/` coordination files, `.agent/DESIGN.md`
-  (the design rubric) and `.agent/SECURITY_CHECKLIST.md`.
-- **Design:** the `design-language` skill.
+  (the design review and the design ticket's steps, with impeccable) and
+  `.agent/SECURITY_CHECKLIST.md`.
 
 ## Troubleshooting
 
